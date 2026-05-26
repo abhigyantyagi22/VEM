@@ -1,0 +1,484 @@
+openapi: 3.0.3
+info:
+  title: VEM API
+  version: 1.0.0
+  description: Vehicle Event Manager API (minimal OpenAPI spec generated from controller DTOs)
+servers:
+  - url: http://localhost:8080
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+  schemas:
+    RegisterDto:
+      type: object
+      properties:
+        name:
+          type: string
+        email:
+          type: string
+          format: email
+        password:
+          type: string
+        phone:
+          type: string
+      required: [name, email, password]
+    LoginDto:
+      type: object
+      properties:
+        email:
+          type: string
+          format: email
+        password:
+          type: string
+      required: [email, password]
+    VehicleDto:
+      type: object
+      properties:
+        id:
+          type: integer
+          format: int64
+        userId:
+          type: integer
+          format: int64
+        vehicleName:
+          type: string
+        vehicleNumber:
+          type: string
+        vehicleType:
+          type: string
+        purchaseDate:
+          type: string
+          format: date
+    DriverDto:
+      type: object
+      properties:
+        id:
+          type: integer
+        vehicleId:
+          type: integer
+        driverName:
+          type: string
+        licenseNumber:
+          type: string
+        contact:
+          type: string
+    FuelLogDto:
+      type: object
+      properties:
+        id:
+          type: integer
+        vehicleId:
+          type: integer
+        fuelAmount:
+          type: number
+          format: double
+        fuelCost:
+          type: number
+          format: double
+        odometer:
+          type: integer
+        date:
+          type: string
+          format: date
+    MaintenanceDto:
+      type: object
+      properties:
+        id:
+          type: integer
+        vehicleId:
+          type: integer
+        serviceType:
+          type: string
+        cost:
+          type: number
+          format: double
+        date:
+          type: string
+          format: date
+        nextDue:
+          type: string
+          format: date
+    DocumentDto:
+      type: object
+      properties:
+        id:
+          type: integer
+        vehicleId:
+          type: integer
+        insuranceExpiry:
+          type: string
+          format: date
+        pucExpiry:
+          type: string
+          format: date
+        registrationExpiry:
+          type: string
+          format: date
+    DashboardDto:
+      type: object
+      properties:
+        vehicleId:
+          type: integer
+        totalExpense:
+          type: number
+        totalFuelCost:
+          type: number
+        totalMaintenanceCost:
+          type: number
+        mileage:
+          type: number
+        costPerKm:
+          type: number
+        monthlyExpenses:
+          type: object
+          additionalProperties:
+            type: number
+paths:
+  /api/auth/register:
+    post:
+      summary: Register a new user
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RegisterDto'
+      responses:
+        '200':
+          description: User created
+  /api/auth/login:
+    post:
+      summary: Login (returns JWT token)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/LoginDto'
+      responses:
+        '200':
+          description: JWT token string
+  /api/vehicles:
+    get:
+      summary: Get user vehicles
+      parameters:
+        - in: query
+          name: userId
+          schema:
+            type: integer
+          required: true
+      responses:
+        '200':
+          description: list of vehicles
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/VehicleDto'
+    post:
+      summary: Add a vehicle
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/VehicleDto'
+      responses:
+        '200':
+          description: created vehicle
+  /api/vehicles/{id}:
+    put:
+      summary: Update a vehicle
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/VehicleDto'
+      responses:
+        '200':
+          description: updated vehicle
+    delete:
+      summary: Delete a vehicle
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: integer
+      responses:
+        '204':
+          description: deleted
+  /api/drivers:
+    post:
+      summary: Add a driver
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/DriverDto'
+      responses:
+        '200':
+          description: driver added
+    get:
+      summary: Get all drivers
+      responses:
+        '200':
+          description: list of drivers
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/DriverDto'
+  /api/drivers/{id}:
+    put:
+      summary: Update a driver
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/DriverDto'
+      responses:
+        '200':
+          description: updated driver
+    delete:
+      summary: Delete a driver
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: deleted
+  /api/drivers/{vehicleId}:
+    get:
+      summary: Get drivers by vehicle id
+      parameters:
+        - in: path
+          name: vehicleId
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: list of drivers
+  /api/fuel:
+    post:
+      summary: Add fuel log
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/FuelLogDto'
+      responses:
+        '200':
+          description: fuel log added
+  /api/fuel/{id}:
+    put:
+      summary: Update fuel log
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/FuelLogDto'
+      responses:
+        '200':
+          description: updated fuel log
+    delete:
+      summary: Delete fuel log
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: integer
+      responses:
+        '204':
+          description: deleted
+  /api/fuel/{vehicleId}:
+    get:
+      summary: Get fuel logs for a vehicle
+      parameters:
+        - in: path
+          name: vehicleId
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: list of fuel logs
+  /api/maintenance:
+    post:
+      summary: Add maintenance record
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/MaintenanceDto'
+      responses:
+        '200':
+          description: maintenance added
+    get:
+      summary: Get maintenance logs by vehicle
+      parameters:
+        - in: query
+          name: vehicleId
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: list of maintenance logs
+  /api/maintenance/{id}:
+    put:
+      summary: Update maintenance record
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/MaintenanceDto'
+      responses:
+        '200':
+          description: updated
+    delete:
+      summary: Delete maintenance
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: integer
+      responses:
+        '204':
+          description: deleted
+  /api/documents:
+    post:
+      summary: Save document data
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/DocumentDto'
+      responses:
+        '200':
+          description: saved
+    get:
+      summary: Get document by vehicleId
+      parameters:
+        - in: query
+          name: vehicleId
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: document
+  /api/documents/history:
+    get:
+      summary: Get document history for a vehicle
+      parameters:
+        - in: query
+          name: vehicleId
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: document history
+  /api/documents/{id}:
+    put:
+      summary: Update a document
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/DocumentDto'
+      responses:
+        '200':
+          description: updated
+    delete:
+      summary: Delete a document
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: integer
+      responses:
+        '204':
+          description: deleted
+  /api/dashboard/{vehicleId}:
+    get:
+      summary: Get dashboard data for a vehicle
+      parameters:
+        - in: path
+          name: vehicleId
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: dashboard
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DashboardDto'
+  /api/notifications/{userId}:
+    get:
+      summary: Get notifications for a user
+      parameters:
+        - in: path
+          name: userId
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: list of notifications

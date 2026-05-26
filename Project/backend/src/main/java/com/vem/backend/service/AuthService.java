@@ -1,0 +1,97 @@
+package com.vem.backend.service;
+
+import com.vem.backend.config.JwtUtil;
+import com.vem.backend.dto.LoginDto;
+import com.vem.backend.dto.RegisterDto;
+import com.vem.backend.model.User;
+import com.vem.backend.repository.UserRepository;
+import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.stereotype.Service;
+
+import java.nio.charset.StandardCharsets;
+import java.security.MessageDigest;
+import java.util.Optional;
+
+@Service
+public class AuthService {
+    private final UserRepository userRepository;
+    private final PasswordEncoder passwordEncoder;
+    private final JwtUtil jwtUtil;
+
+    public AuthService(UserRepository userRepository, PasswordEncoder passwordEncoder, JwtUtil jwtUtil) {
+        this.userRepository = userRepository;
+        this.passwordEncoder = passwordEncoder;
+        this.jwtUtil = jwtUtil;
+    }
+
+    public User registerUser(RegisterDto dto) {
+        if (userRepository.existsByEmail(dto.getEmail())) {
+            throw new RuntimeException("Email already taken");
+        }
+        User user = new User();
+        user.setName(dto.getName());
+        user.setEmail(dto.getEmail());
+        user.setPassword(passwordEncoder.encode(dto.getPassword()));
+        user.setPhone(dto.getPhone());
+        return userRepository.save(user);
+    }
+
+    public String loginUser(LoginDto dto) {
+        Optional<User> userOptional = userRepository.findByEmail(dto.getEmail());
+        if (userOptional.isPresent()) {
+            User user = userOptional.get();
+            String rawPassword = dto.getPassword();
+            String storedPassword = user.getPassword();
+
+            boolean bcryptMatch = false;
+            try {
+                bcryptMatch = storedPassword != null && passwordEncoder.matches(rawPassword, storedPassword);
+            } catch (Exception ignored) {
+                bcryptMatch = false;
+            }
+
+            boolean legacyPlaintextMatch = storedPassword != null && storedPassword.equals(rawPassword);
+            boolean legacySha256Match = isSha256Hex(storedPassword) && sha256Hex(rawPassword).equalsIgnoreCase(storedPassword);
+
+            if (bcryptMatch || legacyPlaintextMatch || legacySha256Match) {
+                // Migrate legacy password formats to BCrypt on successful login.
+                if ((legacyPlaintextMatch || legacySha256Match) && !bcryptMatch) {
+                    user.setPassword(passwordEncoder.encode(rawPassword));
+                    userRepository.save(user);
+                }
+                return jwtUtil.generateToken(user.getEmail(), user.getId());
+            }
+        }
+        throw new RuntimeException("Invalid credentials");
+    }
+
+    private boolean isSha256Hex(String value) {
+        return value != null && value.matches("^[a-fA-F0-9]{64}$");
+    }
+
+    private String sha256Hex(String value) {
+        try {
+            MessageDigest digest = MessageDigest.getInstance("SHA-256");
+            byte[] bytes = digest.digest(value.getBytes(StandardCharsets.UTF_8));
+            StringBuilder hex = new StringBuilder();
+            for (byte b : bytes) {
+                hex.append(String.format("%02x", b));
+            }
+            return hex.toString();
+        } catch (Exception e) {
+            return "";
+        }
+    }
+
+    public String resetPassword(String email, String newPassword) {
+        Optional<User> userOptional = userRepository.findByEmail(email);
+        if (!userOptional.isPresent()) {
+            throw new RuntimeException("User not found");
+        }
+        User user = userOptional.get();
+        user.setPassword(passwordEncoder.encode(newPassword));
+        userRepository.save(user);
+        System.err.println("[AUTH DEBUG] Password reset for email: " + email);
+        return "Password reset successfully";
+    }
+}
