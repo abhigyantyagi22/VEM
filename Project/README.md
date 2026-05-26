@@ -156,12 +156,39 @@ Optional Docker (removed)
 
 Docker-related assets (Dockerfiles and `docker-compose.yml`) were previously added for convenience but have been removed from the repository per project preference. You can still containerize the services later; if you want, I can re-add Dockerfiles and a `docker-compose.yml` that reference secure environment configuration (or provide a guide on how to containerize each service).
 
+Deployment
+
+Vercel is a great fit for the React frontend, but not for the Spring Boot backend in this repository. Deploy the frontend to Vercel and host the backend on a separate Java-capable platform such as Render, Railway, Fly.io, or an AWS/GCP/Azure service.
+
+Frontend on Vercel
+
+1. In Vercel, import the repository and set the project root to `frontend/`.
+2. Add the environment variable:
+
+```bash
+VITE_API_URL=https://your-backend-domain.example.com/api
+```
+
+3. Keep the default build settings or use:
+
+```bash
+Build Command: npm run build
+Output Directory: dist
+```
+
+4. The added `frontend/vercel.json` keeps React Router routes working by rewriting all paths to `index.html`.
+
+Backend deployment
+
+- Build and deploy the Spring Boot app separately.
+- Set your production database URL, username, password, and JWT secret in the backend host environment.
+- Update `VITE_API_URL` in Vercel to point to the deployed backend URL.
+
 CI / Deployment notes
 
 - Suggested steps for CI:
 	- Run `mvn -DskipTests package` for backend
 	- Lint and test frontend, then `npm run build`
-	- Build and push Docker images
 	- Run database migrations as part of deployment
 
 Contributing
@@ -176,11 +203,9 @@ License & contact
 
 If you'd like, I can now:
 
-- Add example environment files (`backend/.env.example`, `frontend/.env.example`)
-- Generate a minimal `Dockerfile` for the backend and/or frontend
-- Expand the API reference into an OpenAPI spec or a detailed endpoints table
-
-Tell me which of the above you want next and I'll implement it.
+- Add a backend deployment guide for Render/Railway/Fly.io
+- Add a `vercel` setup checklist with screenshots/steps
+- Add a small proxy layer so the frontend can call the backend through a stable domain
 
 Example environment files
 
