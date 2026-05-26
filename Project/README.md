@@ -180,9 +180,41 @@ Output Directory: dist
 
 Backend deployment
 
-- Build and deploy the Spring Boot app separately.
-- Set your production database URL, username, password, and JWT secret in the backend host environment.
-- Update `VITE_API_URL` in Vercel to point to the deployed backend URL.
+The backend uses MySQL, JWT auth, and CORS. Deploy it on a Java host that can connect to a managed MySQL database.
+
+Recommended deployment flow:
+
+1. Create a managed MySQL database on your host or provider.
+2. Set these environment variables in the backend service:
+
+```bash
+SPRING_DATASOURCE_URL=jdbc:mysql://<host>:3306/<db>?createDatabaseIfNotExist=true&useSSL=false&serverTimezone=UTC&allowPublicKeyRetrieval=true
+SPRING_DATASOURCE_USERNAME=<db-user>
+SPRING_DATASOURCE_PASSWORD=<db-password>
+JWT_SECRET=<base64-encoded-32-byte-secret>
+CORS_ALLOWED_ORIGIN_PATTERNS=https://your-vercel-app.vercel.app
+SERVER_PORT=8080
+```
+
+3. Build command:
+
+```bash
+mvn -DskipTests package
+```
+
+4. Start command:
+
+```bash
+java -jar target/backend-0.0.1-SNAPSHOT.jar
+```
+
+5. Point Vercel's `VITE_API_URL` to the deployed backend URL, for example:
+
+```bash
+https://your-backend-domain.example.com/api
+```
+
+If you keep the frontend on Vercel, add the deployed Vercel domain to `CORS_ALLOWED_ORIGIN_PATTERNS` so the browser can call the backend.
 
 CI / Deployment notes
 
