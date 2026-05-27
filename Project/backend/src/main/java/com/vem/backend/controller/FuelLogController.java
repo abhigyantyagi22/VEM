@@ -9,9 +9,14 @@ import java.util.List;
 
 @RestController
 @RequestMapping("/api/fuel")
-@CrossOrigin(origins = "*")
+
+@CrossOrigin(
+        origins = "https://vem-ochre.vercel.app",
+        allowCredentials = "true"
+)
+
 public class FuelLogController {
-    
+
     private final FuelLogService fuelLogService;
 
     public FuelLogController(FuelLogService fuelLogService) {

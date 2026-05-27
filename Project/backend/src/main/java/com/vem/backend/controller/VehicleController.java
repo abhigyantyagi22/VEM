@@ -9,16 +9,21 @@ import java.util.List;
 
 @RestController
 @RequestMapping("/api/vehicles")
-@CrossOrigin(origins = "*") // Allows React frontend to call the API
+
+@CrossOrigin(
+        origins = "https://vem-ochre.vercel.app",
+        allowCredentials = "true"
+)
+
 public class VehicleController {
-    
+
     private final VehicleService vehicleService;
 
     public VehicleController(VehicleService vehicleService) {
         this.vehicleService = vehicleService;
     }
 
-    // Assuming user id is passed via param until JWT is setup. E.g., /api/vehicles?userId=1
+    // Assuming user id is passed via param until JWT is setup
     @GetMapping
     public ResponseEntity<List<VehicleDto>> getVehicles(@RequestParam Long userId) {
         return ResponseEntity.ok(vehicleService.getUserVehicles(userId));

@@ -9,9 +9,14 @@ import java.util.List;
 
 @RestController
 @RequestMapping("/api/drivers")
-@CrossOrigin(origins = "*")
+
+@CrossOrigin(
+        origins = "https://vem-ochre.vercel.app",
+        allowCredentials = "true"
+)
+
 public class DriverController {
-    
+
     private final DriverService driverService;
 
     public DriverController(DriverService driverService) {
@@ -35,10 +40,14 @@ public class DriverController {
 
     @PutMapping("/{id}/assign")
     public ResponseEntity<DriverDto> assignDriver(@PathVariable Long id, @RequestBody DriverDto dto) {
+
         if (dto.getVehicleId() == null) {
             throw new RuntimeException("Vehicle not found");
         }
-        return ResponseEntity.ok(driverService.assignDriverToVehicle(id, dto.getVehicleId()));
+
+        return ResponseEntity.ok(
+                driverService.assignDriverToVehicle(id, dto.getVehicleId())
+        );
     }
 
     @DeleteMapping("/{id}")

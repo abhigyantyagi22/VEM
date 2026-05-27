@@ -9,9 +9,14 @@ import java.util.List;
 
 @RestController
 @RequestMapping("/api/documents")
-@CrossOrigin(origins = "*")
+
+@CrossOrigin(
+        origins = "https://vem-ochre.vercel.app",
+        allowCredentials = "true"
+)
+
 public class DocumentController {
-    
+
     private final DocumentService documentService;
 
     public DocumentController(DocumentService documentService) {
@@ -31,9 +36,11 @@ public class DocumentController {
     @GetMapping
     public ResponseEntity<DocumentDto> getDocument(@RequestParam Long vehicleId) {
         DocumentDto doc = documentService.getByVehicle(vehicleId);
+
         if (doc == null) {
             return ResponseEntity.notFound().build();
         }
+
         return ResponseEntity.ok(doc);
     }
 

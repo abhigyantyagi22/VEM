@@ -8,9 +8,14 @@ import java.util.List;
 
 @RestController
 @RequestMapping("/api/notifications")
-@CrossOrigin(origins = "*")
+
+@CrossOrigin(
+        origins = "https://vem-ochre.vercel.app",
+        allowCredentials = "true"
+)
+
 public class NotificationController {
-    
+
     private final NotificationService notificationService;
 
     public NotificationController(NotificationService notificationService) {

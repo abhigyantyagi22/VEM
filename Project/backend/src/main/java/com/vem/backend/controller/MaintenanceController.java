@@ -9,9 +9,14 @@ import java.util.List;
 
 @RestController
 @RequestMapping("/api/maintenance")
-@CrossOrigin(origins = "*")
+
+@CrossOrigin(
+        origins = "https://vem-ochre.vercel.app",
+        allowCredentials = "true"
+)
+
 public class MaintenanceController {
-    
+
     private final MaintenanceService maintenanceService;
 
     public MaintenanceController(MaintenanceService maintenanceService) {
