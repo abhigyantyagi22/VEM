@@ -30,8 +30,14 @@ const Register = () => {
       await api.post('/auth/register', formData);
       navigate('/login');
     } catch (err) {
-      const backendMessage = typeof err?.response?.data === 'string' ? err.response.data : null;
-      setError(backendMessage || 'Registration failed. Please try again.');
+        const status = err?.response?.status;
+        if (status === 400) {
+          setError('Invalid input. Please check the form and try again.');
+        } else if (status >= 500) {
+          setError('Server error. Please try again later.');
+        } else {
+          setError('Registration failed. Please try again.');
+        }
     } finally {
       setIsLoading(false);
     }

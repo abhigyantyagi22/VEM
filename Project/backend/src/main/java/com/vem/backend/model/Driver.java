@@ -9,6 +9,9 @@ public class Driver {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
+    @Column(name = "user_id")
+    private Long userId;
+
     @ManyToOne
     @JoinColumn(name = "vehicle_id", nullable = true)
     private Vehicle vehicle;
@@ -20,8 +23,9 @@ public class Driver {
     public Driver() {
     }
 
-    public Driver(Long id, Vehicle vehicle, String driverName, String licenseNumber, String contact) {
+    public Driver(Long id, Long userId, Vehicle vehicle, String driverName, String licenseNumber, String contact) {
         this.id = id;
+        this.userId = userId;
         this.vehicle = vehicle;
         this.driverName = driverName;
         this.licenseNumber = licenseNumber;
@@ -34,6 +38,14 @@ public class Driver {
 
     public void setId(Long id) {
         this.id = id;
+    }
+
+    public Long getUserId() {
+        return userId;
+    }
+
+    public void setUserId(Long userId) {
+        this.userId = userId;
     }
 
     public Vehicle getVehicle() {

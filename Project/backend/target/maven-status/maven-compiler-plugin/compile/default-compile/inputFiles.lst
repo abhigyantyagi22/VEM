@@ -1,7 +1,9 @@
 /Users/abhigyantyagi/Desktop/Projects/VEM/Project/backend/src/main/java/com/vem/backend/BackendApplication.java
 /Users/abhigyantyagi/Desktop/Projects/VEM/Project/backend/src/main/java/com/vem/backend/config/DatabaseSchemaMigration.java
 /Users/abhigyantyagi/Desktop/Projects/VEM/Project/backend/src/main/java/com/vem/backend/config/EncryptConfig.java
+/Users/abhigyantyagi/Desktop/Projects/VEM/Project/backend/src/main/java/com/vem/backend/config/GlobalExceptionHandler.java
 /Users/abhigyantyagi/Desktop/Projects/VEM/Project/backend/src/main/java/com/vem/backend/config/JwtAuthFilter.java
+/Users/abhigyantyagi/Desktop/Projects/VEM/Project/backend/src/main/java/com/vem/backend/config/JwtSecretValidator.java
 /Users/abhigyantyagi/Desktop/Projects/VEM/Project/backend/src/main/java/com/vem/backend/config/JwtUtil.java
 /Users/abhigyantyagi/Desktop/Projects/VEM/Project/backend/src/main/java/com/vem/backend/config/SecurityConfig.java
 /Users/abhigyantyagi/Desktop/Projects/VEM/Project/backend/src/main/java/com/vem/backend/controller/AuthController.java
@@ -33,6 +35,7 @@
 /Users/abhigyantyagi/Desktop/Projects/VEM/Project/backend/src/main/java/com/vem/backend/repository/UserRepository.java
 /Users/abhigyantyagi/Desktop/Projects/VEM/Project/backend/src/main/java/com/vem/backend/repository/VehicleRepository.java
 /Users/abhigyantyagi/Desktop/Projects/VEM/Project/backend/src/main/java/com/vem/backend/service/AuthService.java
+/Users/abhigyantyagi/Desktop/Projects/VEM/Project/backend/src/main/java/com/vem/backend/service/AuthenticatedUserDetails.java
 /Users/abhigyantyagi/Desktop/Projects/VEM/Project/backend/src/main/java/com/vem/backend/service/CustomUserDetailsService.java
 /Users/abhigyantyagi/Desktop/Projects/VEM/Project/backend/src/main/java/com/vem/backend/service/DashboardService.java
 /Users/abhigyantyagi/Desktop/Projects/VEM/Project/backend/src/main/java/com/vem/backend/service/DocumentService.java

@@ -66,7 +66,15 @@ public class JwtUtil {
     }
 
     private Key getSignKey() {
-        byte[] keyBytes = io.jsonwebtoken.io.Decoders.BASE64.decode(secret);
-        return Keys.hmacShaKeyFor(keyBytes);
+        try {
+            byte[] keyBytes = io.jsonwebtoken.io.Decoders.BASE64.decode(secret);
+            if (keyBytes.length < 32) {
+                throw new IllegalStateException("Authentication configuration is invalid");
+            }
+            return Keys.hmacShaKeyFor(keyBytes);
+        } catch (IllegalArgumentException e) {
+            // decode() throws IllegalArgumentException for invalid base64
+            throw new IllegalStateException("Authentication configuration is invalid");
+        }
     }
 }

@@ -2,6 +2,7 @@ package com.vem.backend.controller;
 
 import com.vem.backend.service.NotificationService;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -23,7 +24,7 @@ public class NotificationController {
     }
 
     @GetMapping("/{userId}")
-    public ResponseEntity<List<String>> getNotifications(@PathVariable Long userId) {
-        return ResponseEntity.ok(notificationService.getNotifications(userId));
+    public ResponseEntity<List<String>> getNotifications(@AuthenticationPrincipal com.vem.backend.service.AuthenticatedUserDetails currentUser, @PathVariable Long userId) {
+        return ResponseEntity.ok(notificationService.getNotifications(currentUser.getId()));
     }
 }

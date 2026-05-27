@@ -20,8 +20,8 @@ public class FuelLogService {
         this.vehicleRepository = vehicleRepository;
     }
 
-    public FuelLogDto addFuelLog(FuelLogDto dto) {
-        Vehicle vehicle = vehicleRepository.findById(dto.getVehicleId())
+    public FuelLogDto addFuelLog(Long userId, FuelLogDto dto) {
+        Vehicle vehicle = vehicleRepository.findByIdAndUserId(dto.getVehicleId(), userId)
                 .orElseThrow(() -> new RuntimeException("Vehicle not found"));
         FuelLog log = new FuelLog();
         log.setVehicle(vehicle);
@@ -32,11 +32,11 @@ public class FuelLogService {
         return mapToDto(fuelLogRepository.save(log));
     }
 
-    public FuelLogDto updateFuelLog(Long id, FuelLogDto dto) {
-        FuelLog existingLog = fuelLogRepository.findById(id)
+    public FuelLogDto updateFuelLog(Long userId, Long id, FuelLogDto dto) {
+        FuelLog existingLog = fuelLogRepository.findByIdAndVehicleUserId(id, userId)
                 .orElseThrow(() -> new RuntimeException("Fuel log not found"));
 
-        Vehicle vehicle = vehicleRepository.findById(dto.getVehicleId())
+        Vehicle vehicle = vehicleRepository.findByIdAndUserId(dto.getVehicleId(), userId)
                 .orElseThrow(() -> new RuntimeException("Vehicle not found"));
 
         existingLog.setVehicle(vehicle);
@@ -48,13 +48,16 @@ public class FuelLogService {
         return mapToDto(fuelLogRepository.save(existingLog));
     }
 
-    public List<FuelLogDto> getByVehicle(Long vehicleId) {
+    public List<FuelLogDto> getByVehicle(Long userId, Long vehicleId) {
+        vehicleRepository.findByIdAndUserId(vehicleId, userId)
+                .orElseThrow(() -> new RuntimeException("Vehicle not found"));
+
         return fuelLogRepository.findByVehicleIdOrderByDateDesc(vehicleId).stream()
                 .map(this::mapToDto).collect(Collectors.toList());
     }
 
-    public void deleteFuelLog(Long id) {
-        FuelLog fuelLog = fuelLogRepository.findById(id)
+    public void deleteFuelLog(Long userId, Long id) {
+        FuelLog fuelLog = fuelLogRepository.findByIdAndVehicleUserId(id, userId)
                 .orElseThrow(() -> new RuntimeException("Fuel log not found"));
         fuelLogRepository.delete(fuelLog);
     }

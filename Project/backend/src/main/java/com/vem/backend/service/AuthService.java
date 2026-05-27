@@ -26,7 +26,7 @@ public class AuthService {
 
     public User registerUser(RegisterDto dto) {
         if (userRepository.existsByEmail(dto.getEmail())) {
-            throw new RuntimeException("Email already taken");
+            throw new IllegalArgumentException("Email already taken");
         }
         User user = new User();
         user.setName(dto.getName());
@@ -62,7 +62,7 @@ public class AuthService {
                 return jwtUtil.generateToken(user.getEmail(), user.getId());
             }
         }
-        throw new RuntimeException("Invalid credentials");
+        throw new IllegalArgumentException("Invalid credentials");
     }
 
     private boolean isSha256Hex(String value) {
@@ -86,7 +86,7 @@ public class AuthService {
     public String resetPassword(String email, String newPassword) {
         Optional<User> userOptional = userRepository.findByEmail(email);
         if (!userOptional.isPresent()) {
-            throw new RuntimeException("User not found");
+            throw new IllegalArgumentException("User not found");
         }
         User user = userOptional.get();
         user.setPassword(passwordEncoder.encode(newPassword));

@@ -25,8 +25,15 @@ const Login = () => {
       navigate('/dashboard');
     } catch (err) {
       console.error('[Login] Error:', err);
-      const backendMessage = typeof err?.response?.data === 'string' ? err.response.data : null;
-      setError(backendMessage || 'Login failed. Please check email and password.');
+      // Do not display long backend error messages to users. Show a concise message.
+      const status = err?.response?.status;
+      if (status === 400) {
+        setError('Invalid email or password.');
+      } else if (status >= 500) {
+        setError('Server error. Please try again later.');
+      } else {
+        setError('Login failed. Please check email and password.');
+      }
     } finally {
       setIsLoading(false);
     }
@@ -59,7 +66,7 @@ const Login = () => {
                 type="email"
                 placeholder="you@example.com"
                 value={email}
-                onChange={(e) => setEmail(e.target.value)}
+                onChange={(e) => { setEmail(e.target.value); setError(''); }}
                 required
                 style={styles.input}
               />
@@ -71,7 +78,7 @@ const Login = () => {
                 type="password"
                 placeholder="••••••••"
                 value={password}
-                onChange={(e) => setPassword(e.target.value)}
+                onChange={(e) => { setPassword(e.target.value); setError(''); }}
                 required
                 style={styles.input}
               />

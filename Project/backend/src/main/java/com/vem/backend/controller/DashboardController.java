@@ -1,8 +1,10 @@
 package com.vem.backend.controller;
 
 import com.vem.backend.dto.DashboardDto;
+import com.vem.backend.service.AuthenticatedUserDetails;
 import com.vem.backend.service.DashboardService;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
@@ -22,7 +24,7 @@ public class DashboardController {
     }
 
     @GetMapping("/{vehicleId}")
-    public ResponseEntity<DashboardDto> getDashboardData(@PathVariable Long vehicleId) {
-        return ResponseEntity.ok(dashboardService.getDashboardData(vehicleId));
+    public ResponseEntity<DashboardDto> getDashboardData(@AuthenticationPrincipal AuthenticatedUserDetails currentUser, @PathVariable Long vehicleId) {
+        return ResponseEntity.ok(dashboardService.getDashboardData(currentUser.getId(), vehicleId));
     }
 }

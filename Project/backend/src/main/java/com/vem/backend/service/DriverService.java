@@ -20,29 +20,32 @@ public class DriverService {
         this.vehicleRepository = vehicleRepository;
     }
 
-    public DriverDto addDriver(DriverDto dto) {
-        // Validate contact must be exactly 10 digits
+    public DriverDto addDriver(Long userId, DriverDto dto) {
         if (!isValidContact(dto.getContact())) {
             throw new RuntimeException("Contact must be exactly 10 digits");
         }
-        
-        // Check if license number already exists
-        if (driverRepository.findByLicenseNumber(dto.getLicenseNumber()).isPresent()) {
+
+        if (driverRepository.findByLicenseNumberAndUserId(dto.getLicenseNumber(), userId).isPresent()) {
             throw new RuntimeException("A driver with this license number already exists");
         }
 
         Vehicle vehicle = null;
         if (dto.getVehicleId() != null) {
-            // Check if vehicle already has a driver assigned
+            vehicle = vehicleRepository.findByIdAndUserId(dto.getVehicleId(), userId)
+                    .orElseThrow(() -> new RuntimeException("Vehicle not found"));
+
             List<Driver> existingDrivers = driverRepository.findByVehicleId(dto.getVehicleId());
             if (!existingDrivers.isEmpty()) {
-                throw new RuntimeException("This vehicle already has a driver assigned. Each vehicle can only have one driver.");
+                // Unassign any existing driver from this vehicle so the new driver can be added.
+                for (Driver d : existingDrivers) {
+                    d.setVehicle(null);
+                    driverRepository.save(d);
+                }
             }
-
-            vehicle = vehicleRepository.findById(dto.getVehicleId())
-                    .orElseThrow(() -> new RuntimeException("Vehicle not found"));
         }
+
         Driver driver = new Driver();
+    driver.setUserId(userId);
         driver.setVehicle(vehicle);
         driver.setDriverName(dto.getDriverName());
         driver.setLicenseNumber(dto.getLicenseNumber());
@@ -50,37 +53,33 @@ public class DriverService {
         return mapToDto(driverRepository.save(driver));
     }
 
-    public DriverDto updateDriver(Long id, DriverDto dto) {
-        // Validate contact must be exactly 10 digits
+    public DriverDto updateDriver(Long userId, Long id, DriverDto dto) {
         if (!isValidContact(dto.getContact())) {
             throw new RuntimeException("Contact must be exactly 10 digits");
         }
-        
-        Driver driver = driverRepository.findById(id)
+
+        Driver driver = driverRepository.findByIdAndUserId(id, userId)
                 .orElseThrow(() -> new RuntimeException("Driver not found"));
-        
-        // Check if license number already exists (and it's not the same driver)
+
         if (!driver.getLicenseNumber().equals(dto.getLicenseNumber())) {
-            if (driverRepository.findByLicenseNumber(dto.getLicenseNumber()).isPresent()) {
+            if (driverRepository.findByLicenseNumberAndUserId(dto.getLicenseNumber(), userId).isPresent()) {
                 throw new RuntimeException("A driver with this license number already exists");
             }
         }
-        
 
         Vehicle vehicle = null;
         if (dto.getVehicleId() != null) {
-            // Check if changing vehicle: if new vehicle already has a driver, reject
+            vehicle = vehicleRepository.findByIdAndUserId(dto.getVehicleId(), userId)
+                    .orElseThrow(() -> new RuntimeException("Vehicle not found"));
+
             if (driver.getVehicle() == null || !driver.getVehicle().getId().equals(dto.getVehicleId())) {
                 List<Driver> existingDrivers = driverRepository.findByVehicleId(dto.getVehicleId());
                 if (!existingDrivers.isEmpty()) {
                     throw new RuntimeException("This vehicle already has a driver assigned. Each vehicle can only have one driver.");
                 }
             }
-
-            vehicle = vehicleRepository.findById(dto.getVehicleId())
-                    .orElseThrow(() -> new RuntimeException("Vehicle not found"));
         }
-        
+
         driver.setVehicle(vehicle);
         driver.setDriverName(dto.getDriverName());
         driver.setLicenseNumber(dto.getLicenseNumber());
@@ -88,11 +87,11 @@ public class DriverService {
         return mapToDto(driverRepository.save(driver));
     }
 
-    public DriverDto assignDriverToVehicle(Long driverId, Long vehicleId) {
-        Driver driver = driverRepository.findById(driverId)
+    public DriverDto assignDriverToVehicle(Long userId, Long driverId, Long vehicleId) {
+        Driver driver = driverRepository.findByIdAndUserId(driverId, userId)
                 .orElseThrow(() -> new RuntimeException("Driver not found"));
 
-        Vehicle vehicle = vehicleRepository.findById(vehicleId)
+        Vehicle vehicle = vehicleRepository.findByIdAndUserId(vehicleId, userId)
                 .orElseThrow(() -> new RuntimeException("Vehicle not found"));
 
         List<Driver> existingDrivers = driverRepository.findByVehicleId(vehicleId);
@@ -108,19 +107,23 @@ public class DriverService {
         return mapToDto(driverRepository.save(driver));
     }
 
-    public void deleteDriver(Long id) {
-        Driver driver = driverRepository.findById(id)
+    public void deleteDriver(Long userId, Long id) {
+        Driver driver = driverRepository.findByIdAndUserId(id, userId)
                 .orElseThrow(() -> new RuntimeException("Driver not found"));
         driverRepository.delete(driver);
     }
 
-    public List<DriverDto> getByVehicle(Long vehicleId) {
+    public List<DriverDto> getByVehicle(Long userId, Long vehicleId) {
+        vehicleRepository.findByIdAndUserId(vehicleId, userId)
+                .orElseThrow(() -> new RuntimeException("Vehicle not found"));
+
         return driverRepository.findByVehicleId(vehicleId).stream()
-                .map(this::mapToDto).collect(Collectors.toList());
+                .map(this::mapToDto)
+                .collect(Collectors.toList());
     }
 
-    public List<DriverDto> getAllDrivers() {
-        return driverRepository.findAll().stream()
+    public List<DriverDto> getAllDrivers(Long userId) {
+        return driverRepository.findByUserId(userId).stream()
                 .map(this::mapToDto)
                 .collect(Collectors.toList());
     }

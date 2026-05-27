@@ -20,13 +20,13 @@ public class DocumentService {
         this.vehicleRepository = vehicleRepository;
     }
 
-    public DocumentDto saveOrUpdate(DocumentDto dto) {
+    public DocumentDto saveOrUpdate(Long userId, DocumentDto dto) {
         Long vehicleId = dto.getVehicleId();
         if (vehicleId == null) {
             throw new RuntimeException("Vehicle id is required");
         }
 
-        Vehicle vehicle = vehicleRepository.findById(vehicleId)
+        Vehicle vehicle = vehicleRepository.findByIdAndUserId(vehicleId, userId)
                 .orElseThrow(() -> new RuntimeException("Vehicle not found"));
 
         // Persist each update as a new snapshot so users can view document history.
@@ -39,17 +39,17 @@ public class DocumentService {
         return mapToDto(documentRepository.save(document));
     }
 
-    public DocumentDto updateDocument(Long id, DocumentDto dto) {
+    public DocumentDto updateDocument(Long userId, Long id, DocumentDto dto) {
         if (id == null) {
             throw new RuntimeException("Document id is required");
         }
 
-        Document document = documentRepository.findById(id)
+        Document document = documentRepository.findByIdAndVehicleUserId(id, userId)
                 .orElseThrow(() -> new RuntimeException("Document record not found"));
 
         Long vehicleId = dto.getVehicleId();
         if (vehicleId != null && !vehicleId.equals(document.getVehicle().getId())) {
-            Vehicle vehicle = vehicleRepository.findById(vehicleId)
+            Vehicle vehicle = vehicleRepository.findByIdAndUserId(vehicleId, userId)
                     .orElseThrow(() -> new RuntimeException("Vehicle not found"));
             document.setVehicle(vehicle);
         }
@@ -61,25 +61,31 @@ public class DocumentService {
         return mapToDto(documentRepository.save(document));
     }
 
-    public DocumentDto getByVehicle(Long vehicleId) {
+    public DocumentDto getByVehicle(Long userId, Long vehicleId) {
+        vehicleRepository.findByIdAndUserId(vehicleId, userId)
+                .orElseThrow(() -> new RuntimeException("Vehicle not found"));
+
         return documentRepository.findTopByVehicleIdOrderByIdDesc(vehicleId)
                 .map(this::mapToDto)
                 .orElse(null);
     }
 
-    public List<DocumentDto> getHistoryByVehicle(Long vehicleId) {
+    public List<DocumentDto> getHistoryByVehicle(Long userId, Long vehicleId) {
+        vehicleRepository.findByIdAndUserId(vehicleId, userId)
+                .orElseThrow(() -> new RuntimeException("Vehicle not found"));
+
         return documentRepository.findByVehicleIdOrderByIdDesc(vehicleId)
                 .stream()
                 .map(this::mapToDto)
                 .collect(Collectors.toList());
     }
 
-    public void deleteDocument(Long id) {
+    public void deleteDocument(Long userId, Long id) {
         if (id == null) {
             throw new RuntimeException("Document id is required");
         }
 
-        Document document = documentRepository.findById(id)
+        Document document = documentRepository.findByIdAndVehicleUserId(id, userId)
                 .orElseThrow(() -> new RuntimeException("Document record not found"));
 
         documentRepository.delete(document);

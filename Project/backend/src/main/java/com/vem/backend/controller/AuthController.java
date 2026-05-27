@@ -28,7 +28,7 @@ public class AuthController {
         try {
             User user = authService.registerUser(registerDto);
             return ResponseEntity.ok(user);
-        } catch (Exception e) {
+        } catch (IllegalArgumentException e) {
             return ResponseEntity.badRequest().body(e.getMessage());
         }
     }
@@ -38,7 +38,7 @@ public class AuthController {
         try {
             String token = authService.loginUser(loginDto);
             return ResponseEntity.ok(token);
-        } catch (Exception e) {
+        } catch (IllegalArgumentException e) {
             return ResponseEntity.badRequest().body(e.getMessage());
         }
     }
@@ -48,7 +48,7 @@ public class AuthController {
         try {
             String message = authService.resetPassword(loginDto.getEmail(), loginDto.getPassword());
             return ResponseEntity.ok(message);
-        } catch (Exception e) {
+        } catch (IllegalArgumentException e) {
             return ResponseEntity.badRequest().body(e.getMessage());
         }
     }

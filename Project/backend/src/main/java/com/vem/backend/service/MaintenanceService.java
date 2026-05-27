@@ -20,13 +20,13 @@ public class MaintenanceService {
         this.vehicleRepository = vehicleRepository;
     }
 
-    public MaintenanceDto addMaintenance(MaintenanceDto dto) {
+    public MaintenanceDto addMaintenance(Long userId, MaintenanceDto dto) {
         Long vehicleId = dto.getVehicleId();
         if (vehicleId == null) {
             throw new RuntimeException("Vehicle id is required");
         }
 
-        Vehicle vehicle = vehicleRepository.findById(vehicleId)
+        Vehicle vehicle = vehicleRepository.findByIdAndUserId(vehicleId, userId)
                 .orElseThrow(() -> new RuntimeException("Vehicle not found"));
         Maintenance m = new Maintenance();
         m.setVehicle(vehicle);
@@ -37,17 +37,17 @@ public class MaintenanceService {
         return mapToDto(maintenanceRepository.save(m));
     }
 
-    public MaintenanceDto updateMaintenance(Long id, MaintenanceDto dto) {
+    public MaintenanceDto updateMaintenance(Long userId, Long id, MaintenanceDto dto) {
         if (id == null) {
             throw new RuntimeException("Maintenance id is required");
         }
 
-        Maintenance maintenance = maintenanceRepository.findById(id)
+        Maintenance maintenance = maintenanceRepository.findByIdAndVehicleUserId(id, userId)
                 .orElseThrow(() -> new RuntimeException("Maintenance record not found"));
 
         Long vehicleId = dto.getVehicleId();
         if (vehicleId != null && !vehicleId.equals(maintenance.getVehicle().getId())) {
-            Vehicle vehicle = vehicleRepository.findById(vehicleId)
+            Vehicle vehicle = vehicleRepository.findByIdAndUserId(vehicleId, userId)
                     .orElseThrow(() -> new RuntimeException("Vehicle not found"));
             maintenance.setVehicle(vehicle);
         }
@@ -60,17 +60,20 @@ public class MaintenanceService {
         return mapToDto(maintenanceRepository.save(maintenance));
     }
 
-    public List<MaintenanceDto> getByVehicle(Long vehicleId) {
+    public List<MaintenanceDto> getByVehicle(Long userId, Long vehicleId) {
+        vehicleRepository.findByIdAndUserId(vehicleId, userId)
+                .orElseThrow(() -> new RuntimeException("Vehicle not found"));
+
         return maintenanceRepository.findByVehicleIdOrderByDateDesc(vehicleId).stream()
                 .map(this::mapToDto).collect(Collectors.toList());
     }
 
-    public void deleteMaintenance(Long id) {
+    public void deleteMaintenance(Long userId, Long id) {
         if (id == null) {
             throw new RuntimeException("Maintenance id is required");
         }
 
-        Maintenance maintenance = maintenanceRepository.findById(id)
+        Maintenance maintenance = maintenanceRepository.findByIdAndVehicleUserId(id, userId)
                 .orElseThrow(() -> new RuntimeException("Maintenance record not found"));
 
         maintenanceRepository.delete(maintenance);

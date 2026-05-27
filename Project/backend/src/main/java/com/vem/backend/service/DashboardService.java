@@ -3,6 +3,7 @@ package com.vem.backend.service;
 import com.vem.backend.dto.DashboardDto;
 import com.vem.backend.model.FuelLog;
 import com.vem.backend.model.Maintenance;
+import com.vem.backend.repository.VehicleRepository;
 import com.vem.backend.repository.FuelLogRepository;
 import com.vem.backend.repository.MaintenanceRepository;
 import org.springframework.stereotype.Service;
@@ -15,15 +16,24 @@ public class DashboardService {
 
     private final FuelLogRepository fuelLogRepository;
     private final MaintenanceRepository maintenanceRepository;
+    private final VehicleRepository vehicleRepository;
 
-    public DashboardService(FuelLogRepository fuelLogRepository, MaintenanceRepository maintenanceRepository) {
+    public DashboardService(FuelLogRepository fuelLogRepository, MaintenanceRepository maintenanceRepository, VehicleRepository vehicleRepository) {
         this.fuelLogRepository = fuelLogRepository;
         this.maintenanceRepository = maintenanceRepository;
+        this.vehicleRepository = vehicleRepository;
     }
 
-    public DashboardDto getDashboardData(Long vehicleId) {
-        List<FuelLog> fuelLogs = fuelLogRepository.findByVehicleIdOrderByDateDesc(vehicleId);
-        List<Maintenance> maintenanceLogs = maintenanceRepository.findByVehicleIdOrderByDateDesc(vehicleId);
+    public DashboardDto getDashboardData(Long userId, Long vehicleId) {
+        vehicleRepository.findByIdAndUserId(vehicleId, userId)
+                .orElseThrow(() -> new RuntimeException("Vehicle not found"));
+
+        List<FuelLog> fuelLogs = fuelLogRepository.findByVehicleIdOrderByDateDesc(vehicleId).stream()
+                .filter(log -> log.getVehicle() != null && log.getVehicle().getUser() != null && userId.equals(log.getVehicle().getUser().getId()))
+                .toList();
+        List<Maintenance> maintenanceLogs = maintenanceRepository.findByVehicleIdOrderByDateDesc(vehicleId).stream()
+                .filter(log -> log.getVehicle() != null && log.getVehicle().getUser() != null && userId.equals(log.getVehicle().getUser().getId()))
+                .toList();
 
         DashboardDto dto = new DashboardDto();
         dto.setVehicleId(vehicleId);

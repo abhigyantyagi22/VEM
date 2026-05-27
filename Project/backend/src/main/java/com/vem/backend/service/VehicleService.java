@@ -26,8 +26,8 @@ public class VehicleService {
                 .collect(Collectors.toList());
     }
 
-    public VehicleDto addVehicle(VehicleDto dto) {
-        User user = userRepository.findById(dto.getUserId())
+    public VehicleDto addVehicle(Long userId, VehicleDto dto) {
+        User user = userRepository.findById(userId)
                 .orElseThrow(() -> new RuntimeException("User not found"));
         
         Vehicle vehicle = new Vehicle();
@@ -40,12 +40,14 @@ public class VehicleService {
         return mapToDto(vehicleRepository.save(vehicle));
     }
 
-    public void deleteVehicle(Long id) {
-        vehicleRepository.deleteById(id);
+    public void deleteVehicle(Long id, Long userId) {
+        Vehicle vehicle = vehicleRepository.findByIdAndUserId(id, userId)
+                .orElseThrow(() -> new RuntimeException("Vehicle not found"));
+        vehicleRepository.delete(vehicle);
     }
 
-    public VehicleDto updateVehicle(Long id, VehicleDto dto) {
-        Vehicle vehicle = vehicleRepository.findById(id)
+    public VehicleDto updateVehicle(Long id, Long userId, VehicleDto dto) {
+        Vehicle vehicle = vehicleRepository.findByIdAndUserId(id, userId)
                 .orElseThrow(() -> new RuntimeException("Vehicle not found"));
 
         // Only update editable fields

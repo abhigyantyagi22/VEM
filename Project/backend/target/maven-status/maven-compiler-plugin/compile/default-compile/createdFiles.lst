@@ -19,6 +19,7 @@ com/vem/backend/service/CustomUserDetailsService.class
 com/vem/backend/service/DashboardService.class
 com/vem/backend/controller/AuthController.class
 com/vem/backend/model/Vehicle.class
+com/vem/backend/config/GlobalExceptionHandler.class
 com/vem/backend/model/Maintenance.class
 com/vem/backend/dto/LoginDto.class
 com/vem/backend/controller/DocumentController.class
@@ -32,12 +33,14 @@ com/vem/backend/config/JwtAuthFilter.class
 com/vem/backend/service/NotificationService.class
 com/vem/backend/service/MaintenanceService.class
 com/vem/backend/model/Document.class
+com/vem/backend/config/JwtSecretValidator.class
 com/vem/backend/BackendApplication.class
 com/vem/backend/service/AuthService.class
 com/vem/backend/dto/DashboardDto.class
 com/vem/backend/repository/DocumentRepository.class
 com/vem/backend/repository/MaintenanceRepository.class
 com/vem/backend/model/FuelLog.class
+com/vem/backend/service/AuthenticatedUserDetails.class
 com/vem/backend/model/User.class
 com/vem/backend/dto/RegisterDto.class
 com/vem/backend/model/Driver.class
