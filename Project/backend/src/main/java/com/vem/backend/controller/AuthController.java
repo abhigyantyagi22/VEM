@@ -9,7 +9,12 @@ import org.springframework.web.bind.annotation.*;
 
 @RestController
 @RequestMapping("/api/auth")
-@CrossOrigin(origins = "*") // Allows React frontend to call the API
+
+@CrossOrigin(
+        origins = "https://vem-ochre.vercel.app",
+        allowCredentials = "true"
+)
+
 public class AuthController {
 
     private final AuthService authService;
@@ -22,7 +27,7 @@ public class AuthController {
     public ResponseEntity<?> register(@RequestBody RegisterDto registerDto) {
         try {
             User user = authService.registerUser(registerDto);
-            return ResponseEntity.ok(user); // Normally don't return full mapped user, maybe UserDto instead
+            return ResponseEntity.ok(user);
         } catch (Exception e) {
             return ResponseEntity.badRequest().body(e.getMessage());
         }
@@ -32,7 +37,7 @@ public class AuthController {
     public ResponseEntity<?> login(@RequestBody LoginDto loginDto) {
         try {
             String token = authService.loginUser(loginDto);
-            return ResponseEntity.ok(token); // Return JWT Token
+            return ResponseEntity.ok(token);
         } catch (Exception e) {
             return ResponseEntity.badRequest().body(e.getMessage());
         }
