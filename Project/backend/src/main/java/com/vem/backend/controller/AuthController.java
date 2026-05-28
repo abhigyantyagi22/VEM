@@ -1,10 +1,13 @@
 package com.vem.backend.controller;
 
 import com.vem.backend.dto.LoginDto;
+import com.vem.backend.dto.ProfileDto;
 import com.vem.backend.dto.RegisterDto;
 import com.vem.backend.model.User;
 import com.vem.backend.service.AuthService;
+import com.vem.backend.service.AuthenticatedUserDetails;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
@@ -38,6 +41,24 @@ public class AuthController {
         try {
             String token = authService.loginUser(loginDto);
             return ResponseEntity.ok(token);
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.badRequest().body(e.getMessage());
+        }
+    }
+
+    @GetMapping("/profile")
+    public ResponseEntity<?> getProfile(@AuthenticationPrincipal AuthenticatedUserDetails currentUser) {
+        try {
+            return ResponseEntity.ok(authService.getUserProfile(currentUser.getId()));
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.badRequest().body(e.getMessage());
+        }
+    }
+
+    @PutMapping("/profile")
+    public ResponseEntity<?> updateProfile(@AuthenticationPrincipal AuthenticatedUserDetails currentUser, @RequestBody ProfileDto dto) {
+        try {
+            return ResponseEntity.ok(authService.updateProfile(currentUser.getId(), dto));
         } catch (IllegalArgumentException e) {
             return ResponseEntity.badRequest().body(e.getMessage());
         }

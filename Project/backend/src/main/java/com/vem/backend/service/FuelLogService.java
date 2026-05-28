@@ -27,7 +27,7 @@ public class FuelLogService {
         log.setVehicle(vehicle);
         log.setFuelAmount(dto.getFuelAmount());
         log.setFuelCost(dto.getFuelCost());
-        log.setOdometer(dto.getOdometer());
+        log.setDistanceDriven(dto.getDistanceDriven());
         log.setDate(dto.getDate());
         return mapToDto(fuelLogRepository.save(log));
     }
@@ -42,7 +42,7 @@ public class FuelLogService {
         existingLog.setVehicle(vehicle);
         existingLog.setFuelAmount(dto.getFuelAmount());
         existingLog.setFuelCost(dto.getFuelCost());
-        existingLog.setOdometer(dto.getOdometer());
+        existingLog.setDistanceDriven(dto.getDistanceDriven());
         existingLog.setDate(dto.getDate());
 
         return mapToDto(fuelLogRepository.save(existingLog));
@@ -68,7 +68,7 @@ public class FuelLogService {
         dto.setVehicleId(log.getVehicle().getId());
         dto.setFuelAmount(log.getFuelAmount());
         dto.setFuelCost(log.getFuelCost());
-        dto.setOdometer(log.getOdometer());
+        dto.setDistanceDriven(log.getDistanceDriven());
         dto.setDate(log.getDate());
         return dto;
     }

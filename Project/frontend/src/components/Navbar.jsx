@@ -109,6 +109,16 @@ const Navbar = () => {
                   mobileStyles={styles.navLinkMobile}
                   activePillStyles={styles.activePill}
                 />
+                <NavLinkItem
+                  to="/profile"
+                  label={isMobile ? 'Me' : 'Profile'}
+                  icon="⊙"
+                  isMobile={isMobile}
+                  active={isActive('/profile')}
+                  baseStyles={styles.navLink}
+                  mobileStyles={styles.navLinkMobile}
+                  activePillStyles={styles.activePill}
+                />
               </div>
 
               <button onClick={handleLogout} style={{ ...styles.logoutBtn, ...(isMobile ? styles.logoutBtnMobile : {}) }}>

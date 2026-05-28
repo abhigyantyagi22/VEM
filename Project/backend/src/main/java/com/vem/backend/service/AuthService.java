@@ -2,6 +2,7 @@ package com.vem.backend.service;
 
 import com.vem.backend.config.JwtUtil;
 import com.vem.backend.dto.LoginDto;
+import com.vem.backend.dto.ProfileDto;
 import com.vem.backend.dto.RegisterDto;
 import com.vem.backend.model.User;
 import com.vem.backend.repository.UserRepository;
@@ -81,6 +82,44 @@ public class AuthService {
         } catch (Exception e) {
             return "";
         }
+    }
+
+    public ProfileDto getUserProfile(Long userId) {
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new IllegalArgumentException("User not found"));
+        ProfileDto dto = new ProfileDto();
+        dto.setName(user.getName());
+        dto.setEmail(user.getEmail());
+        dto.setPhone(user.getPhone());
+        return dto;
+    }
+
+    public ProfileDto updateProfile(Long userId, ProfileDto dto) {
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new IllegalArgumentException("User not found"));
+
+        if (dto.getName() != null && !dto.getName().isBlank()) {
+            user.setName(dto.getName());
+        }
+        if (dto.getPhone() != null) {
+            user.setPhone(dto.getPhone());
+        }
+        if (dto.getNewPassword() != null && !dto.getNewPassword().isBlank()) {
+            if (dto.getCurrentPassword() == null || dto.getCurrentPassword().isBlank()) {
+                throw new IllegalArgumentException("Current password is required to set a new password");
+            }
+            if (!passwordEncoder.matches(dto.getCurrentPassword(), user.getPassword())) {
+                throw new IllegalArgumentException("Current password is incorrect");
+            }
+            user.setPassword(passwordEncoder.encode(dto.getNewPassword()));
+        }
+
+        userRepository.save(user);
+        ProfileDto response = new ProfileDto();
+        response.setName(user.getName());
+        response.setEmail(user.getEmail());
+        response.setPhone(user.getPhone());
+        return response;
     }
 
     public String resetPassword(String email, String newPassword) {

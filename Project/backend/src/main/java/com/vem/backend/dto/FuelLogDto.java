@@ -7,18 +7,18 @@ public class FuelLogDto {
     private Long vehicleId;
     private Double fuelAmount;
     private Double fuelCost;
-    private Long odometer;
+    private Long distanceDriven;
     private LocalDate date;
 
     public FuelLogDto() {
     }
 
-    public FuelLogDto(Long id, Long vehicleId, Double fuelAmount, Double fuelCost, Long odometer, LocalDate date) {
+    public FuelLogDto(Long id, Long vehicleId, Double fuelAmount, Double fuelCost, Long distanceDriven, LocalDate date) {
         this.id = id;
         this.vehicleId = vehicleId;
         this.fuelAmount = fuelAmount;
         this.fuelCost = fuelCost;
-        this.odometer = odometer;
+        this.distanceDriven = distanceDriven;
         this.date = date;
     }
 
@@ -54,12 +54,12 @@ public class FuelLogDto {
         this.fuelCost = fuelCost;
     }
 
-    public Long getOdometer() {
-        return odometer;
+    public Long getDistanceDriven() {
+        return distanceDriven;
     }
 
-    public void setOdometer(Long odometer) {
-        this.odometer = odometer;
+    public void setDistanceDriven(Long distanceDriven) {
+        this.distanceDriven = distanceDriven;
     }
 
     public LocalDate getDate() {

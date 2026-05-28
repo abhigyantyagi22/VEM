@@ -166,7 +166,7 @@ Frontend on Vercel
 2. Add the environment variable:
 
 ```bash
-VITE_API_URL=https://your-backend-domain.example.com/api
+VITE_API_URL=https://vem-backend-y13y.onrender.com/api
 ```
 
 3. Keep the default build settings or use:
@@ -192,7 +192,7 @@ SPRING_DATASOURCE_URL=jdbc:mysql://<host>:3306/<db>?createDatabaseIfNotExist=tru
 SPRING_DATASOURCE_USERNAME=<db-user>
 SPRING_DATASOURCE_PASSWORD=<db-password>
 JWT_SECRET=<base64-encoded-32-byte-secret>
-CORS_ALLOWED_ORIGIN_PATTERNS=https://your-vercel-app.vercel.app
+CORS_ALLOWED_ORIGIN_PATTERNS=https://vem-ochre.vercel.app
 SERVER_PORT=8080
 ```
 
@@ -211,7 +211,7 @@ java -jar target/backend-0.0.1-SNAPSHOT.jar
 5. Point Vercel's `VITE_API_URL` to the deployed backend URL, for example:
 
 ```bash
-https://your-backend-domain.example.com/api
+https://vem-backend-y13y.onrender.com/api
 ```
 
 If you keep the frontend on Vercel, add the deployed Vercel domain to `CORS_ALLOWED_ORIGIN_PATTERNS` so the browser can call the backend.

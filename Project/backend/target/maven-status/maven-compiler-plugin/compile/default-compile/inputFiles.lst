@@ -17,11 +17,14 @@
 /Users/abhigyantyagi/Desktop/Projects/VEM/Project/backend/src/main/java/com/vem/backend/dto/DashboardDto.java
 /Users/abhigyantyagi/Desktop/Projects/VEM/Project/backend/src/main/java/com/vem/backend/dto/DocumentDto.java
 /Users/abhigyantyagi/Desktop/Projects/VEM/Project/backend/src/main/java/com/vem/backend/dto/DriverDto.java
+/Users/abhigyantyagi/Desktop/Projects/VEM/Project/backend/src/main/java/com/vem/backend/dto/FleetDashboardDto.java
 /Users/abhigyantyagi/Desktop/Projects/VEM/Project/backend/src/main/java/com/vem/backend/dto/FuelLogDto.java
 /Users/abhigyantyagi/Desktop/Projects/VEM/Project/backend/src/main/java/com/vem/backend/dto/LoginDto.java
 /Users/abhigyantyagi/Desktop/Projects/VEM/Project/backend/src/main/java/com/vem/backend/dto/MaintenanceDto.java
+/Users/abhigyantyagi/Desktop/Projects/VEM/Project/backend/src/main/java/com/vem/backend/dto/ProfileDto.java
 /Users/abhigyantyagi/Desktop/Projects/VEM/Project/backend/src/main/java/com/vem/backend/dto/RegisterDto.java
 /Users/abhigyantyagi/Desktop/Projects/VEM/Project/backend/src/main/java/com/vem/backend/dto/VehicleDto.java
+/Users/abhigyantyagi/Desktop/Projects/VEM/Project/backend/src/main/java/com/vem/backend/dto/VehicleExpenseDto.java
 /Users/abhigyantyagi/Desktop/Projects/VEM/Project/backend/src/main/java/com/vem/backend/model/Document.java
 /Users/abhigyantyagi/Desktop/Projects/VEM/Project/backend/src/main/java/com/vem/backend/model/Driver.java
 /Users/abhigyantyagi/Desktop/Projects/VEM/Project/backend/src/main/java/com/vem/backend/model/FuelLog.java

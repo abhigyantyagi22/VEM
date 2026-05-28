@@ -54,7 +54,7 @@ const VehicleList = () => {
 
   useEffect(() => {
     fetchVehicles();
-  }, []);
+  }, [userId]);
 
   const resetForm = () => {
     setForm({ vehicleName: '', vehicleNumber: '', vehicleType: '', purchaseDate: '' });

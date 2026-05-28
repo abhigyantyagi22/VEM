@@ -13,6 +13,7 @@ const FuelLogs = lazy(() => import('./pages/FuelLogs'));
 const MaintenancePage = lazy(() => import('./pages/MaintenancePage'));
 const DocumentsPage = lazy(() => import('./pages/DocumentsPage'));
 const VehicleWorkspace = lazy(() => import('./pages/VehicleWorkspace'));
+const Profile = lazy(() => import('./pages/Profile'));
 
 const PrivateRoute = ({ children }) => {
   const { isAuthenticated } = useAuth();
@@ -57,6 +58,7 @@ const AppContent = () => {
             <Route path="/vehicles/:id/fuel" element={<PrivateRoute><FuelLogs /></PrivateRoute>} />
             <Route path="/vehicles/:id/maintenance" element={<PrivateRoute><MaintenancePage /></PrivateRoute>} />
             <Route path="/vehicles/:id/documents" element={<PrivateRoute><DocumentsPage /></PrivateRoute>} />
+            <Route path="/profile" element={<PrivateRoute><Profile /></PrivateRoute>} />
             <Route path="/" element={<Navigate to="/dashboard" />} />
           </Routes>
         </Suspense>

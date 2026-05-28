@@ -83,7 +83,7 @@ const FuelLogs = () => {
       fuelAmount: fuelAmount ? String(fuelAmount) : '',
       fuelRate: fuelRate ? fuelRate.toFixed(2) : '',
       totalBill: totalBill ? String(totalBill) : '',
-      kilometersRun: log.odometer ? String(log.odometer) : '',
+      kilometersRun: log.distanceDriven ? String(log.distanceDriven) : '',
       date: log.date || getToday(),
     });
     setShowModal(true);
@@ -125,7 +125,7 @@ const FuelLogs = () => {
       vehicleId: Number(id),
       fuelAmount,
       fuelCost: totalBill,
-      odometer: Number(form.kilometersRun),
+      distanceDriven: Number(form.kilometersRun),
       date: form.date,
     };
 
@@ -215,7 +215,7 @@ const FuelLogs = () => {
                     <td style={styles.tableCell}>{amount}</td>
                     <td style={styles.tableCell}>{formatRupees(rate)}</td>
                     <td style={styles.tableCell}>{formatRupees(cost)}</td>
-                    <td style={styles.tableCell}>{log.odometer}</td>
+                    <td style={styles.tableCell}>{log.distanceDriven}</td>
                     <td style={styles.tableCell}>
                       <div style={{ display: 'flex', gap: '8px' }}>
                         <button type="button" onClick={() => openEditModal(log)} style={styles.editButton}>

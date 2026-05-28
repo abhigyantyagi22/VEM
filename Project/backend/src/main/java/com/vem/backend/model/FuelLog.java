@@ -16,18 +16,19 @@ public class FuelLog {
 
     private Double fuelAmount;
     private Double fuelCost;
-    private Long odometer;
+    @Column(name = "odometer")
+    private Long distanceDriven;
     private LocalDate date;
 
     public FuelLog() {
     }
 
-    public FuelLog(Long id, Vehicle vehicle, Double fuelAmount, Double fuelCost, Long odometer, LocalDate date) {
+    public FuelLog(Long id, Vehicle vehicle, Double fuelAmount, Double fuelCost, Long distanceDriven, LocalDate date) {
         this.id = id;
         this.vehicle = vehicle;
         this.fuelAmount = fuelAmount;
         this.fuelCost = fuelCost;
-        this.odometer = odometer;
+        this.distanceDriven = distanceDriven;
         this.date = date;
     }
 
@@ -63,12 +64,12 @@ public class FuelLog {
         this.fuelCost = fuelCost;
     }
 
-    public Long getOdometer() {
-        return odometer;
+    public Long getDistanceDriven() {
+        return distanceDriven;
     }
 
-    public void setOdometer(Long odometer) {
-        this.odometer = odometer;
+    public void setDistanceDriven(Long distanceDriven) {
+        this.distanceDriven = distanceDriven;
     }
 
     public LocalDate getDate() {

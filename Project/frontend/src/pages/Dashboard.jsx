@@ -22,6 +22,7 @@ const Dashboard = () => {
     });
     const [addingVehicle, setAddingVehicle] = useState(false);
     const [vehicleError, setVehicleError] = useState('');
+    const [fleetData, setFleetData] = useState(null);
 
     useEffect(() => {
         const fetchVehicles = async () => {
@@ -45,6 +46,13 @@ const Dashboard = () => {
             }
         };
         fetchVehicles();
+    }, [userId]);
+
+    useEffect(() => {
+        if (!userId) return;
+        api.get('/dashboard/fleet')
+            .then(res => setFleetData(res.data))
+            .catch(() => {});
     }, [userId]);
 
     useEffect(() => {
@@ -211,6 +219,62 @@ const Dashboard = () => {
                     + Add Vehicle
                 </button>
             </div>
+
+            {fleetData && (
+                <div style={fleetStyles.section}>
+                    <h2 style={fleetStyles.heading}>Fleet Overview</h2>
+                    <div style={fleetStyles.statsRow}>
+                        <div style={fleetStyles.card}>
+                            <div style={fleetStyles.cardLabel}>Total Fleet Expense</div>
+                            <div style={fleetStyles.cardValue}>{formatRupees(fleetData.totalFleetExpense)}</div>
+                        </div>
+                        <div style={fleetStyles.card}>
+                            <div style={fleetStyles.cardLabel}>Fuel Spend</div>
+                            <div style={fleetStyles.cardValue}>{formatRupees(fleetData.totalFuelCost)}</div>
+                        </div>
+                        <div style={fleetStyles.card}>
+                            <div style={fleetStyles.cardLabel}>Maintenance Spend</div>
+                            <div style={fleetStyles.cardValue}>{formatRupees(fleetData.totalMaintenanceCost)}</div>
+                        </div>
+                        <div style={fleetStyles.card}>
+                            <div style={fleetStyles.cardLabel}>Vehicles</div>
+                            <div style={fleetStyles.cardValue}>{fleetData.totalVehicles}</div>
+                        </div>
+                    </div>
+
+                    {fleetData.vehicleExpenses && fleetData.vehicleExpenses.length > 0 && (
+                        <div style={fleetStyles.breakdown}>
+                            <div style={fleetStyles.breakdownTitle}>Expense by Vehicle</div>
+                            {fleetData.vehicleExpenses.map((v, i) => {
+                                const pct = fleetData.totalFleetExpense > 0
+                                    ? (v.totalExpense / fleetData.totalFleetExpense) * 100
+                                    : 0;
+                                return (
+                                    <div key={v.vehicleId} style={fleetStyles.barRow}>
+                                        <div style={fleetStyles.barLabel}>
+                                            <span style={fleetStyles.barName}>{v.vehicleName}</span>
+                                            <span style={fleetStyles.barNum}>{v.vehicleNumber}</span>
+                                        </div>
+                                        <div style={fleetStyles.barTrack}>
+                                            <div style={{ ...fleetStyles.barFill, width: `${pct.toFixed(1)}%`, opacity: 1 - i * 0.15 }} />
+                                        </div>
+                                        <div style={fleetStyles.barAmt}>{formatRupees(v.totalExpense)}</div>
+                                    </div>
+                                );
+                            })}
+                        </div>
+                    )}
+
+                    {fleetData.upcomingAlerts && fleetData.upcomingAlerts.length > 0 && (
+                        <div style={fleetStyles.alerts}>
+                            <div style={fleetStyles.alertsTitle}>Upcoming Alerts</div>
+                            {fleetData.upcomingAlerts.map((msg, i) => (
+                                <div key={i} style={fleetStyles.alertItem}>⚠ {msg}</div>
+                            ))}
+                        </div>
+                    )}
+                </div>
+            )}
 
             <div style={styles.selectorWrapper}>
                 <label style={styles.label}>Select Vehicle:</label>
@@ -544,6 +608,122 @@ const styles = {
         borderRadius: '16px',
         border: '2px dashed #e2e8f0',
     }
+};
+
+const fleetStyles = {
+    section: {
+        background: '#fff',
+        borderRadius: '22px',
+        border: '1px solid #f1f3f5',
+        boxShadow: '0 10px 30px rgba(0,0,0,0.06)',
+        padding: '28px',
+        marginBottom: '8px',
+    },
+    heading: {
+        margin: '0 0 20px',
+        fontSize: '20px',
+        fontWeight: 700,
+        color: '#0f172a',
+    },
+    statsRow: {
+        display: 'grid',
+        gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))',
+        gap: '14px',
+        marginBottom: '24px',
+    },
+    card: {
+        background: 'linear-gradient(130deg, rgba(236,253,250,0.8), rgba(240,249,255,0.7))',
+        border: '1px solid rgba(153, 246, 228, 0.4)',
+        borderRadius: '14px',
+        padding: '16px 18px',
+    },
+    cardLabel: {
+        fontSize: '12px',
+        fontWeight: 700,
+        color: '#0f766e',
+        textTransform: 'uppercase',
+        letterSpacing: '0.8px',
+        marginBottom: '6px',
+    },
+    cardValue: {
+        fontSize: '22px',
+        fontWeight: 800,
+        color: '#0f172a',
+    },
+    breakdown: {
+        marginBottom: '20px',
+    },
+    breakdownTitle: {
+        fontSize: '14px',
+        fontWeight: 700,
+        color: '#475569',
+        marginBottom: '12px',
+        textTransform: 'uppercase',
+        letterSpacing: '0.6px',
+    },
+    barRow: {
+        display: 'grid',
+        gridTemplateColumns: '180px 1fr 110px',
+        alignItems: 'center',
+        gap: '12px',
+        marginBottom: '10px',
+    },
+    barLabel: {
+        display: 'flex',
+        flexDirection: 'column',
+        gap: '2px',
+        minWidth: 0,
+    },
+    barName: {
+        fontWeight: 700,
+        fontSize: '14px',
+        color: '#1e293b',
+        overflow: 'hidden',
+        textOverflow: 'ellipsis',
+        whiteSpace: 'nowrap',
+    },
+    barNum: {
+        fontSize: '12px',
+        color: '#94a3b8',
+    },
+    barTrack: {
+        height: '10px',
+        background: '#f1f5f9',
+        borderRadius: '999px',
+        overflow: 'hidden',
+    },
+    barFill: {
+        height: '100%',
+        background: 'linear-gradient(90deg, #14b8a6, #0f766e)',
+        borderRadius: '999px',
+        transition: 'width 0.4s ease',
+    },
+    barAmt: {
+        textAlign: 'right',
+        fontWeight: 700,
+        fontSize: '14px',
+        color: '#0f172a',
+    },
+    alerts: {
+        background: 'rgba(254, 243, 199, 0.6)',
+        border: '1px solid rgba(245, 158, 11, 0.3)',
+        borderRadius: '12px',
+        padding: '14px 16px',
+        display: 'grid',
+        gap: '8px',
+    },
+    alertsTitle: {
+        fontSize: '13px',
+        fontWeight: 700,
+        color: '#92400e',
+        textTransform: 'uppercase',
+        letterSpacing: '0.6px',
+    },
+    alertItem: {
+        fontSize: '14px',
+        color: '#78350f',
+        fontWeight: 500,
+    },
 };
 
 export default Dashboard;
