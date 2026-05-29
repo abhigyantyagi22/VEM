@@ -4,6 +4,7 @@ import api from '../services/api';
 import { useAuth } from '../context/useAuth';
 import VehicleIssueChatbot from '../components/VehicleIssueChatbot';
 import { useTheme } from '../context/ThemeContext';
+import Skeleton from '../components/Skeleton';
 
 const NAV_GRADIENT = 'linear-gradient(130deg, rgba(15, 23, 42, 0.72), rgba(15, 118, 110, 0.4))';
 const NAV_ACTIVE_GRADIENT = 'linear-gradient(130deg, rgba(20, 184, 166, 0.84), rgba(13, 148, 136, 0.72))';
@@ -188,7 +189,30 @@ const Dashboard = () => {
     );
 
     if (loading && vehicles.length === 0) {
-        return <div style={styles.centerText}><h3>Loading your smart dashboard...</h3></div>;
+        return (
+            <div style={{ ...styles.dashboardContainer }}>
+                <div style={styles.header}>
+                    <Skeleton width="260px" height="38px" borderRadius="12px" />
+                    <Skeleton width="140px" height="44px" borderRadius="24px" />
+                </div>
+                <div style={{ background: '#fff', borderRadius: '22px', border: '1px solid #f1f3f5', padding: '28px', marginBottom: '8px' }}>
+                    <Skeleton width="160px" height="22px" style={{ marginBottom: '20px' }} />
+                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(180px,1fr))', gap: '14px', marginBottom: '20px' }}>
+                        {[1,2,3,4].map(i => <div key={i} style={{ borderRadius: '14px', padding: '18px', border: '1px solid #f1f5f9' }}><Skeleton width="70%" height="12px" /><Skeleton width="50%" height="28px" style={{ marginTop: '10px' }} /></div>)}
+                    </div>
+                    <Skeleton width="140px" height="14px" style={{ marginBottom: '12px' }} />
+                    {[1,2].map(i => <div key={i} style={{ display: 'grid', gridTemplateColumns: '180px 1fr 110px', gap: '12px', marginBottom: '10px', alignItems: 'center' }}><Skeleton height="14px" /><Skeleton height="10px" /><Skeleton height="14px" /></div>)}
+                </div>
+                <Skeleton width="280px" height="52px" borderRadius="16px" />
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(300px,1fr))', gap: '25px', marginTop: '20px', marginBottom: '40px' }}>
+                    {[1,2,3].map(i => <div key={i} style={{ background: '#fff', padding: '30px 25px', borderRadius: '20px', border: '1px solid #f1f3f5' }}><Skeleton width="60%" height="14px" /><Skeleton width="45%" height="40px" style={{ marginTop: '12px' }} /></div>)}
+                </div>
+                <div style={{ background: '#fff', padding: '35px', borderRadius: '24px', border: '1px solid #f1f3f5' }}>
+                    <Skeleton width="200px" height="20px" style={{ marginBottom: '30px' }} />
+                    <Skeleton width="100%" height="280px" borderRadius="12px" />
+                </div>
+            </div>
+        );
     }
 
     if (vehicles.length === 0) {
@@ -296,7 +320,15 @@ const Dashboard = () => {
             </div>
 
             {loading ? (
-                <div style={styles.centerText}><h4>Loading vehicle metrics...</h4></div>
+                <div style={styles.content}>
+                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(300px,1fr))', gap: '25px', marginBottom: '40px' }}>
+                        {[1,2,3].map(i => <div key={i} style={{ background: '#fff', padding: '30px 25px', borderRadius: '20px', border: '1px solid #f1f3f5' }}><Skeleton width="60%" height="14px" /><Skeleton width="45%" height="40px" style={{ marginTop: '12px' }} /></div>)}
+                    </div>
+                    <div style={{ background: '#fff', padding: '35px', borderRadius: '24px', border: '1px solid #f1f3f5' }}>
+                        <Skeleton width="200px" height="20px" style={{ marginBottom: '30px' }} />
+                        <Skeleton width="100%" height="280px" borderRadius="12px" />
+                    </div>
+                </div>
             ) : dashboardData ? (
                 <div style={styles.content}>
                     <div style={styles.statsGrid}>

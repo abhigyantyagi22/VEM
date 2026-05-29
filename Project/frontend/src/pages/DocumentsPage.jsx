@@ -2,11 +2,13 @@ import React, { useEffect, useState } from 'react';
 import { useParams } from 'react-router-dom';
 import api from '../services/api';
 import { useTheme } from '../context/ThemeContext';
+import ConfirmModal from '../components/ConfirmModal';
 
 const DocumentsPage = () => {
   const { id } = useParams();
   const { theme } = useTheme();
   const [doc, setDoc] = useState({ insuranceExpiry: '', pucExpiry: '', registrationExpiry: '' });
+  const [confirm, setConfirm] = useState(null);
   const [history, setHistory] = useState([]);
   const [saving, setSaving] = useState(false);
   const [editingDocumentId, setEditingDocumentId] = useState(null);
@@ -92,21 +94,25 @@ const DocumentsPage = () => {
     setSuccessMessage('');
   };
 
-  const handleDelete = async (documentId) => {
-    if (window.confirm('Are you sure you want to delete this document record?')) {
-      try {
-        await api.delete(`/documents/${documentId}`);
-        setEditingDocumentId(null);
-        setDoc({ insuranceExpiry: '', pucExpiry: '', registrationExpiry: '' });
-        setError('');
-        setSuccessMessage('');
-        await fetchDoc();
-        await fetchHistory();
-      } catch (e) {
-        console.error(e);
-        setError('Could not delete document. Please try again.');
-      }
-    }
+  const handleDelete = (documentId) => {
+    setConfirm({
+      message: 'This document record will be permanently deleted.',
+      onConfirm: async () => {
+        setConfirm(null);
+        try {
+          await api.delete(`/documents/${documentId}`);
+          setEditingDocumentId(null);
+          setDoc({ insuranceExpiry: '', pucExpiry: '', registrationExpiry: '' });
+          setError('');
+          setSuccessMessage('');
+          await fetchDoc();
+          await fetchHistory();
+        } catch (e) {
+          console.error(e);
+          setError('Could not delete document. Please try again.');
+        }
+      },
+    });
   };
 
   return (
@@ -199,6 +205,7 @@ const DocumentsPage = () => {
           </tbody>
         </table>
       )}
+    {confirm && <ConfirmModal message={confirm.message} onConfirm={confirm.onConfirm} onCancel={() => setConfirm(null)} />}
     </div>
   );
 };

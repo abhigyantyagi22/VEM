@@ -3,11 +3,13 @@ import { useParams } from 'react-router-dom';
 import api from '../services/api';
 import { useAuth } from '../context/useAuth';
 import { useTheme } from '../context/ThemeContext';
+import ConfirmModal from '../components/ConfirmModal';
 
 const DriverManagement = () => {
     const { id } = useParams();
     const { userId } = useAuth();
     const { theme } = useTheme();
+    const [confirm, setConfirm] = useState(null);
     const [vehicles, setVehicles] = useState([]);
     const [allDrivers, setAllDrivers] = useState([]);
     const [showModal, setShowModal] = useState(false);
@@ -160,13 +162,17 @@ const DriverManagement = () => {
         setShowModal(true);
     };
 
-    const handleDelete = async (driverId) => {
-        if (window.confirm('Delete driver?')) {
-            try {
-                await api.delete(`/drivers/${driverId}`);
-                fetchAllDrivers();
-            } catch(e) { console.error(e); }
-        }
+    const handleDelete = (driverId) => {
+        setConfirm({
+            message: 'This driver will be permanently deleted.',
+            onConfirm: async () => {
+                setConfirm(null);
+                try {
+                    await api.delete(`/drivers/${driverId}`);
+                    fetchAllDrivers();
+                } catch(e) { console.error(e); }
+            },
+        });
     };
 
     const assignUnassignedToVehicle = async () => {
@@ -367,6 +373,7 @@ const DriverManagement = () => {
             )}
 
             {showModal && renderModal()}
+            {confirm && <ConfirmModal message={confirm.message} onConfirm={confirm.onConfirm} onCancel={() => setConfirm(null)} />}
         </div>
     );
 };

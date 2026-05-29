@@ -2,6 +2,19 @@ import React, { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import api from '../services/api';
 
+const getStrength = (pw) => {
+  if (!pw) return null;
+  let score = 0;
+  if (pw.length >= 6) score++;
+  if (pw.length >= 10) score++;
+  if (/[A-Z]/.test(pw)) score++;
+  if (/[0-9]/.test(pw)) score++;
+  if (/[^A-Za-z0-9]/.test(pw)) score++;
+  if (score <= 2) return { label: 'Weak', color: '#ef4444', pct: '33%' };
+  if (score <= 3) return { label: 'Medium', color: '#f59e0b', pct: '66%' };
+  return { label: 'Strong', color: '#10b981', pct: '100%' };
+};
+
 const Register = () => {
   const [formData, setFormData] = useState({ name: '', email: '', password: '', phone: '' });
   const [error, setError] = useState('');
@@ -16,6 +29,12 @@ const Register = () => {
     // Basic validation
     if (!formData.name || !formData.email || !formData.password || !formData.phone) {
       setError('All fields are required');
+      setIsLoading(false);
+      return;
+    }
+
+    if (!/^\d{10}$/.test(formData.phone)) {
+      setError('Phone number must be exactly 10 digits.');
       setIsLoading(false);
       return;
     }
@@ -95,12 +114,29 @@ const Register = () => {
               <label style={styles.label}>Phone Number</label>
               <input
                 type="tel"
-                placeholder="+91 98765 43210"
+                placeholder="9876543210"
                 value={formData.phone}
-                onChange={(e) => handleChange('phone', e.target.value)}
+                onChange={(e) => {
+                  const digits = e.target.value.replace(/\D/g, '').slice(0, 10);
+                  handleChange('phone', digits);
+                }}
                 required
-                style={styles.input}
+                maxLength={10}
+                style={{
+                  ...styles.input,
+                  borderColor: formData.phone && formData.phone.length !== 10
+                    ? 'rgba(239,68,68,0.6)'
+                    : 'rgba(20,184,166,0.4)',
+                }}
               />
+              {formData.phone.length > 0 && formData.phone.length < 10 && (
+                <p style={{ margin: '3px 0 0', fontSize: '11px', color: '#ef4444', fontWeight: 600 }}>
+                  {10 - formData.phone.length} more digit{10 - formData.phone.length !== 1 ? 's' : ''} needed
+                </p>
+              )}
+              {formData.phone.length === 10 && (
+                <p style={{ margin: '3px 0 0', fontSize: '11px', color: '#10b981', fontWeight: 600 }}>✓ Valid</p>
+              )}
             </div>
 
             <div style={styles.fieldGroup}>
@@ -113,7 +149,18 @@ const Register = () => {
                 required
                 style={styles.input}
               />
-              <p style={styles.passwordHint}>At least 6 characters</p>
+              {(() => {
+                const s = getStrength(formData.password);
+                if (!s) return <p style={styles.passwordHint}>At least 6 characters</p>;
+                return (
+                  <div>
+                    <div style={{ height: '5px', borderRadius: '999px', background: 'rgba(0,0,0,0.1)', overflow: 'hidden', marginTop: '6px' }}>
+                      <div style={{ height: '100%', width: s.pct, background: s.color, borderRadius: '999px', transition: 'width 0.3s ease, background 0.3s ease' }} />
+                    </div>
+                    <p style={{ margin: '4px 0 0', fontSize: '11px', fontWeight: 700, color: s.color }}>{s.label}</p>
+                  </div>
+                );
+              })()}
             </div>
 
             <button

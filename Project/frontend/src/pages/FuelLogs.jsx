@@ -2,6 +2,7 @@ import React, { useEffect, useMemo, useState } from 'react';
 import { useParams } from 'react-router-dom';
 import api from '../services/api';
 import { useTheme } from '../context/ThemeContext';
+import ConfirmModal from '../components/ConfirmModal';
 
 const getToday = () => new Date().toISOString().split('T')[0];
 
@@ -14,6 +15,7 @@ const FuelLogs = () => {
   const { id } = useParams();
   const { theme } = useTheme();
   const [logs, setLogs] = useState([]);
+  const [confirm, setConfirm] = useState(null);
   const [showModal, setShowModal] = useState(false);
   const [editingLog, setEditingLog] = useState(null);
   const [saving, setSaving] = useState(false);
@@ -151,16 +153,20 @@ const FuelLogs = () => {
     }
   };
 
-  const handleDelete = async (logId) => {
-    if (window.confirm('Are you sure you want to delete this fuel log?')) {
-      try {
-        await api.delete(`/fuel/${logId}`);
-        await fetchLogs();
-      } catch (e) {
-        console.error(e);
-        setError('Could not delete fuel log. Please try again.');
-      }
-    }
+  const handleDelete = (logId) => {
+    setConfirm({
+      message: 'This fuel log will be permanently deleted.',
+      onConfirm: async () => {
+        setConfirm(null);
+        try {
+          await api.delete(`/fuel/${logId}`);
+          await fetchLogs();
+        } catch (e) {
+          console.error(e);
+          setError('Could not delete fuel log. Please try again.');
+        }
+      },
+    });
   };
 
   return (
@@ -323,6 +329,7 @@ const FuelLogs = () => {
           </div>
         </div>
       )}
+    {confirm && <ConfirmModal message={confirm.message} onConfirm={confirm.onConfirm} onCancel={() => setConfirm(null)} />}
     </div>
   );
 };

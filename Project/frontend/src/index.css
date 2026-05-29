@@ -45,6 +45,22 @@ html {
   box-sizing: border-box;
 }
 
+@keyframes vem-shimmer {
+  0%   { background-position: -800px 0; }
+  100% { background-position:  800px 0; }
+}
+.vem-skeleton {
+  background: linear-gradient(90deg, #e2e8f0 25%, #f8fafc 50%, #e2e8f0 75%);
+  background-size: 800px 100%;
+  animation: vem-shimmer 1.5s ease-in-out infinite;
+  border-radius: 8px;
+}
+[data-theme="dark"] .vem-skeleton {
+  background: linear-gradient(90deg, #1e293b 25%, #334155 50%, #1e293b 75%);
+  background-size: 800px 100%;
+  animation: vem-shimmer 1.5s ease-in-out infinite;
+}
+
 h1, h2, h3, h4, h5, h6 {
   margin-top: 0;
   color: var(--text-main);

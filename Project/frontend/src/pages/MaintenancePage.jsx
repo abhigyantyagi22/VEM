@@ -2,11 +2,13 @@ import React, { useState, useEffect } from 'react';
 import { useParams } from 'react-router-dom';
 import api from '../services/api';
 import { useTheme } from '../context/ThemeContext';
+import ConfirmModal from '../components/ConfirmModal';
 
 const MaintenancePage = () => {
     const { id } = useParams();
     const { theme } = useTheme();
     const [logs, setLogs] = useState([]);
+    const [confirm, setConfirm] = useState(null);
     const [form, setForm] = useState({ serviceType: '', cost: '', date: '', nextDue: '' });
     const [editingLogId, setEditingLogId] = useState(null);
     const today = new Date();
@@ -58,15 +60,19 @@ const MaintenancePage = () => {
         setForm({ serviceType: '', cost: '', date: '', nextDue: '' });
     };
 
-    const handleDelete = async (logId) => {
-        if (window.confirm('Are you sure you want to delete this maintenance record?')) {
-            try {
-                await api.delete(`/maintenance/${logId}`);
-                setEditingLogId(null);
-                setForm({ serviceType: '', cost: '', date: '', nextDue: '' });
-                fetchLogs();
-            } catch(e) { console.error(e); }
-        }
+    const handleDelete = (logId) => {
+        setConfirm({
+            message: 'This maintenance record will be permanently deleted.',
+            onConfirm: async () => {
+                setConfirm(null);
+                try {
+                    await api.delete(`/maintenance/${logId}`);
+                    setEditingLogId(null);
+                    setForm({ serviceType: '', cost: '', date: '', nextDue: '' });
+                    fetchLogs();
+                } catch(e) { console.error(e); }
+            },
+        });
     };
 
     const upcomingLogs = logs
@@ -176,6 +182,7 @@ const MaintenancePage = () => {
                     </tbody>
                 </table>
             </div>
+        {confirm && <ConfirmModal message={confirm.message} onConfirm={confirm.onConfirm} onCancel={() => setConfirm(null)} />}
         </div>
     );
 };

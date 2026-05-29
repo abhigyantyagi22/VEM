@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import api from '../services/api';
 import { useTheme } from '../context/ThemeContext';
+import Skeleton from '../components/Skeleton';
 
 const Profile = () => {
   const { theme } = useTheme();
@@ -54,7 +55,29 @@ const Profile = () => {
   };
 
   if (loading) {
-    return <div style={styles.center}>Loading profile...</div>;
+    return (
+      <div style={styles.page}>
+        <div style={{ ...styles.card, background: theme.bgCardGlass, border: `1px solid ${theme.border}` }}>
+          <Skeleton width="140px" height="32px" style={{ marginBottom: '8px' }} />
+          <Skeleton width="180px" height="14px" style={{ marginBottom: '32px' }} />
+          <Skeleton width="100%" height="1px" style={{ marginBottom: '24px' }} />
+          {[1, 2].map(i => (
+            <div key={i} style={{ marginBottom: '16px' }}>
+              <Skeleton width="80px" height="12px" style={{ marginBottom: '8px' }} />
+              <Skeleton width="100%" height="44px" borderRadius="12px" />
+            </div>
+          ))}
+          <Skeleton width="100%" height="1px" style={{ margin: '24px 0' }} />
+          {[1, 2, 3].map(i => (
+            <div key={i} style={{ marginBottom: '16px' }}>
+              <Skeleton width="120px" height="12px" style={{ marginBottom: '8px' }} />
+              <Skeleton width="100%" height="44px" borderRadius="12px" />
+            </div>
+          ))}
+          <Skeleton width="100%" height="48px" borderRadius="14px" style={{ marginTop: '8px' }} />
+        </div>
+      </div>
+    );
   }
 
   return (
