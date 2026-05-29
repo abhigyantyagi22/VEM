@@ -68,10 +68,10 @@ const Navbar = () => {
   return (
     <>
       <div style={styles.brandChip}>
-        <span style={styles.brandDot} aria-hidden="true">◉</span>
+        <span style={styles.brandDot} aria-hidden="true">🛞</span>
         <div>
-          <p style={styles.brandLabel}>Smart</p>
-          <h2 style={styles.brandTitle}>Tracker</h2>
+          <p style={styles.brandLabel}>Wheel</p>
+          <h2 style={styles.brandTitle}>Sync</h2>
         </div>
       </div>
 

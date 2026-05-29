@@ -194,7 +194,7 @@ const Dashboard = () => {
     if (vehicles.length === 0) {
         return (
             <div style={styles.emptyStateContainer}>
-                <h1 style={styles.gradientText}>Welcome to Smart Vehicle Tracker! 🚀</h1>
+                <h1 style={styles.gradientText}>Welcome to WheelSync! 🛞</h1>
                 <p style={styles.subText}>You currently have zero vehicles registered in your garage.</p>
                 <div style={styles.emptyCard}>
                     <h2 style={{color: '#2d3436'}}>Get Started</h2>

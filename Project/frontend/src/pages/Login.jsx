@@ -48,8 +48,8 @@ const Login = () => {
         <div style={styles.card}>
           {/* Branding Inside Card */}
           <div style={styles.cardBranding}>
-            <div style={styles.logo}>◉</div>
-            <h1 style={styles.brandText}>SmartTracker</h1>
+            <div style={styles.logo}>🛞</div>
+            <h1 style={styles.brandText}>WheelSync</h1>
           </div>
 
           <div style={styles.cardHeader}>
