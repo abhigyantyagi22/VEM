@@ -2,6 +2,7 @@ import React, { useEffect, useMemo, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import api from '../services/api';
 import { useAuth } from '../context/useAuth';
+import { useTheme } from '../context/ThemeContext';
 import FuelLogs from './FuelLogs';
 import MaintenancePage from './MaintenancePage';
 import DocumentsPage from './DocumentsPage';
@@ -19,6 +20,7 @@ const VehicleWorkspace = () => {
   const { id } = useParams();
   const navigate = useNavigate();
   const { userId } = useAuth();
+  const { theme } = useTheme();
   const [activeSection, setActiveSection] = useState('fuel');
   const [vehicle, setVehicle] = useState(null);
   const [showEdit, setShowEdit] = useState(false);
@@ -63,7 +65,7 @@ const VehicleWorkspace = () => {
   return (
     <>
       <div style={styles.page}>
-      <header style={styles.headerCard}>
+      <header style={{ ...styles.headerCard, background: theme.bgCardGlass, border: `1px solid ${theme.border}` }}>
         <div style={{ display: 'flex', gap: 12, alignItems: 'center' }}>
           <button type="button" onClick={() => navigate('/vehicles')} style={styles.backButton}>
             ← Back to Vehicles
@@ -87,7 +89,7 @@ const VehicleWorkspace = () => {
       </header>
 
       <div style={styles.layout}>
-        <aside style={styles.sideNav}>
+        <aside style={{ ...styles.sideNav, background: theme.bgCardGlass, border: `1px solid ${theme.border}` }}>
           <p style={styles.sideLabel}>Quick Navigation</p>
           {SECTION_ITEMS.map((item) => {
             const isActive = item.key === activeSection;
@@ -104,8 +106,8 @@ const VehicleWorkspace = () => {
           })}
         </aside>
 
-        <section style={styles.contentCard}>
-          <h2 style={styles.sectionTitle}>{sectionTitle}</h2>
+        <section style={{ ...styles.contentCard, background: theme.bgCardGlass, border: `1px solid ${theme.border}` }}>
+          <h2 style={{ ...styles.sectionTitle, color: theme.textPrimary }}>{sectionTitle}</h2>
           {renderContent()}
         </section>
       </div>

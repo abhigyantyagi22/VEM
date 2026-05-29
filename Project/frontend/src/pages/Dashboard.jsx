@@ -3,12 +3,14 @@ import { BarChart, Bar, XAxis, YAxis, Tooltip, CartesianGrid, ResponsiveContaine
 import api from '../services/api';
 import { useAuth } from '../context/useAuth';
 import VehicleIssueChatbot from '../components/VehicleIssueChatbot';
+import { useTheme } from '../context/ThemeContext';
 
 const NAV_GRADIENT = 'linear-gradient(130deg, rgba(15, 23, 42, 0.72), rgba(15, 118, 110, 0.4))';
 const NAV_ACTIVE_GRADIENT = 'linear-gradient(130deg, rgba(20, 184, 166, 0.84), rgba(13, 148, 136, 0.72))';
 
 const Dashboard = () => {
-    const { userId } = useAuth();  // Get userId from AuthContext instead of utils
+    const { userId } = useAuth();
+    const { theme } = useTheme();
     const [vehicles, setVehicles] = useState([]);
     const [selectedVehicle, setSelectedVehicle] = useState("");
     const [dashboardData, setDashboardData] = useState(null);
@@ -119,13 +121,13 @@ const Dashboard = () => {
 
     const renderVehicleModal = () => (
         <div style={styles.modalOverlay} role="presentation" onClick={closeVehicleModal}>
-            <div style={styles.modal} role="dialog" aria-modal="true" aria-labelledby="add-vehicle-title" onClick={(e) => e.stopPropagation()}>
+            <div style={{ ...styles.modal, background: theme.bgModal }} role="dialog" aria-modal="true" aria-labelledby="add-vehicle-title" onClick={(e) => e.stopPropagation()}>
                 <div style={styles.modalHeader}>
-                    <h2 id="add-vehicle-title" style={styles.modalTitle}>Add Vehicle</h2>
+                    <h2 id="add-vehicle-title" style={{ ...styles.modalTitle, color: theme.textPrimary }}>Add Vehicle</h2>
                     <button type="button" onClick={closeVehicleModal} style={styles.closeButton} aria-label="Close">×</button>
                 </div>
                 <form onSubmit={handleAddVehicle} style={styles.modalForm}>
-                    <label style={styles.fieldLabel}>
+                    <label style={{ ...styles.fieldLabel, color: theme.textSecondary }}>
                         Vehicle Name
                         <input
                             type="text"
@@ -133,10 +135,10 @@ const Dashboard = () => {
                             onChange={e => setVehicleForm({ ...vehicleForm, vehicleName: e.target.value })}
                             placeholder="Honda City"
                             required
-                            style={styles.input}
+                            style={{ ...styles.input, background: theme.bgInput, borderColor: theme.borderInput, color: theme.textPrimary }}
                         />
                     </label>
-                    <label style={styles.fieldLabel}>
+                    <label style={{ ...styles.fieldLabel, color: theme.textSecondary }}>
                         Vehicle Number
                         <input
                             type="text"
@@ -144,16 +146,16 @@ const Dashboard = () => {
                             onChange={e => setVehicleForm({ ...vehicleForm, vehicleNumber: e.target.value })}
                             placeholder="MH 12 AB 1234"
                             required
-                            style={styles.input}
+                            style={{ ...styles.input, background: theme.bgInput, borderColor: theme.borderInput, color: theme.textPrimary }}
                         />
                     </label>
-                    <label style={styles.fieldLabel}>
+                    <label style={{ ...styles.fieldLabel, color: theme.textSecondary }}>
                         Vehicle Type
                         <select
                             value={vehicleForm.vehicleType}
                             onChange={e => setVehicleForm({ ...vehicleForm, vehicleType: e.target.value })}
                             required
-                            style={styles.input}
+                            style={{ ...styles.input, background: theme.bgInput, borderColor: theme.borderInput, color: theme.textPrimary }}
                         >
                             <option value="">Select type</option>
                             <option value="Car">Car</option>
@@ -163,14 +165,14 @@ const Dashboard = () => {
                             <option value="Other">Other</option>
                         </select>
                     </label>
-                    <label style={styles.fieldLabel}>
+                    <label style={{ ...styles.fieldLabel, color: theme.textSecondary }}>
                         Purchase Date
                         <input
                             type="date"
                             value={vehicleForm.purchaseDate}
                             onChange={e => setVehicleForm({ ...vehicleForm, purchaseDate: e.target.value })}
                             required
-                            style={styles.input}
+                            style={{ ...styles.input, background: theme.bgInput, borderColor: theme.borderInput, color: theme.textPrimary }}
                         />
                     </label>
                     {vehicleError && <p style={styles.errorText}>{vehicleError}</p>}
@@ -298,22 +300,22 @@ const Dashboard = () => {
             ) : dashboardData ? (
                 <div style={styles.content}>
                     <div style={styles.statsGrid}>
-                        <div style={{...styles.statCard, borderTop: '4px solid #14b8a6'}}>
-                            <h3 style={styles.cardTitle}>Total Expense</h3>
-                            <p style={styles.cardValue}>{formatRupees(dashboardData.totalExpense)}</p>
+                        <div style={{...styles.statCard, borderTop: '4px solid #14b8a6', background: theme.bgCard }}>
+                            <h3 style={{ ...styles.cardTitle, color: theme.textSecondary }}>Total Expense</h3>
+                            <p style={{ ...styles.cardValue, color: theme.textPrimary }}>{formatRupees(dashboardData.totalExpense)}</p>
                         </div>
-                        <div style={{...styles.statCard, borderTop: '4px solid #0f766e'}}>
-                            <h3 style={styles.cardTitle}>Vehicle Mileage</h3>
-                            <p style={styles.cardValue}>{dashboardData.mileage || 0} <span style={styles.unit}>km/l</span></p>
+                        <div style={{...styles.statCard, borderTop: '4px solid #0f766e', background: theme.bgCard }}>
+                            <h3 style={{ ...styles.cardTitle, color: theme.textSecondary }}>Vehicle Mileage</h3>
+                            <p style={{ ...styles.cardValue, color: theme.textPrimary }}>{dashboardData.mileage || 0} <span style={styles.unit}>km/l</span></p>
                         </div>
-                        <div style={{...styles.statCard, borderTop: '4px solid #0f172a'}}>
-                            <h3 style={styles.cardTitle}>Cost per Km</h3>
-                            <p style={styles.cardValue}>{formatRupees(dashboardData.costPerKm)}</p>
+                        <div style={{...styles.statCard, borderTop: '4px solid #14b8a6', background: theme.bgCard }}>
+                            <h3 style={{ ...styles.cardTitle, color: theme.textSecondary }}>Cost per Km</h3>
+                            <p style={{ ...styles.cardValue, color: theme.textPrimary }}>{formatRupees(dashboardData.costPerKm)}</p>
                         </div>
                     </div>
 
-                    <div style={styles.chartSection}>
-                        <h3 style={styles.chartTitle}>Monthly Expense Overview</h3>
+                    <div style={{ ...styles.chartSection, background: theme.bgCard }}>
+                        <h3 style={{ ...styles.chartTitle, color: theme.textPrimary }}>Monthly Expense Overview</h3>
                         {chartData.length > 0 ? (
                             <div style={{ width: '100%', height: 350 }}>
                                 <ResponsiveContainer>

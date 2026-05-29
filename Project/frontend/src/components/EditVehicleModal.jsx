@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import api from '../services/api';
+import { useTheme } from '../context/ThemeContext';
 
 const EditVehicleModal = ({ vehicle, onClose, onSaved }) => {
   const [form, setForm] = useState({ vehicleName: '', vehicleNumber: '', vehicleType: '' });
@@ -33,21 +34,23 @@ const EditVehicleModal = ({ vehicle, onClose, onSaved }) => {
     }
   };
 
+  const { theme } = useTheme();
+
   if (!vehicle) return null;
 
   return (
     <div style={overlayStyle} role="dialog" aria-modal="true">
-      <div style={modalStyle}>
-        <h3 style={{ margin: 0, marginBottom: 8 }}>Edit Vehicle</h3>
+      <div style={{ ...modalStyle, background: theme.bgModal }}>
+        <h3 style={{ margin: 0, marginBottom: 8, color: theme.textPrimary }}>Edit Vehicle</h3>
         <form onSubmit={handleSubmit}>
-          <label style={labelStyle}>Name</label>
-          <input name="vehicleName" value={form.vehicleName} onChange={handleChange} style={inputStyle} />
+          <label style={{ ...labelStyle, color: theme.textAccent }}>Name</label>
+          <input name="vehicleName" value={form.vehicleName} onChange={handleChange} style={{ ...inputStyle, background: theme.bgInput, borderColor: theme.borderInput, color: theme.textPrimary }} />
 
-          <label style={labelStyle}>Number</label>
-          <input name="vehicleNumber" value={form.vehicleNumber} onChange={handleChange} style={inputStyle} />
+          <label style={{ ...labelStyle, color: theme.textAccent }}>Number</label>
+          <input name="vehicleNumber" value={form.vehicleNumber} onChange={handleChange} style={{ ...inputStyle, background: theme.bgInput, borderColor: theme.borderInput, color: theme.textPrimary }} />
 
-          <label style={labelStyle}>Type</label>
-          <input name="vehicleType" value={form.vehicleType} onChange={handleChange} style={inputStyle} />
+          <label style={{ ...labelStyle, color: theme.textAccent }}>Type</label>
+          <input name="vehicleType" value={form.vehicleType} onChange={handleChange} style={{ ...inputStyle, background: theme.bgInput, borderColor: theme.borderInput, color: theme.textPrimary }} />
 
           <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end', marginTop: 12 }}>
             <button type="button" onClick={onClose} style={cancelBtnStyle} disabled={saving}>Cancel</button>

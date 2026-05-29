@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import api from '../services/api';
 import { useAuth } from '../context/useAuth';
+import { useTheme } from '../context/ThemeContext';
 
 const NavLinkItem = ({ to, label, icon, isMobile, active, baseStyles, mobileStyles, activePillStyles }) => {
   return (
@@ -24,6 +25,7 @@ const Navbar = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const { isAuthenticated, userId, logout } = useAuth();
+  const { isDark, toggle } = useTheme();
   const [notifications, setNotifications] = useState([]);
   const [isMobile, setIsMobile] = useState(window.innerWidth <= 720);
   const isAuthRoute = location.pathname === '/login' || location.pathname === '/register';
@@ -121,6 +123,14 @@ const Navbar = () => {
                 />
               </div>
 
+              <button
+                type="button"
+                onClick={toggle}
+                style={{ ...styles.logoutBtn, ...(isMobile ? styles.logoutBtnMobile : {}), fontSize: isMobile ? '14px' : '15px' }}
+                title={isDark ? 'Switch to light mode' : 'Switch to dark mode'}
+              >
+                {isDark ? '☀' : '🌙'}
+              </button>
               <button onClick={handleLogout} style={{ ...styles.logoutBtn, ...(isMobile ? styles.logoutBtnMobile : {}) }}>
                 {isMobile ? '⎋' : 'Logout'}
               </button>

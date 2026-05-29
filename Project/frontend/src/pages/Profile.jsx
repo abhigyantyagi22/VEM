@@ -1,7 +1,9 @@
 import React, { useEffect, useState } from 'react';
 import api from '../services/api';
+import { useTheme } from '../context/ThemeContext';
 
 const Profile = () => {
+  const { theme } = useTheme();
   const [profile, setProfile] = useState({ name: '', email: '', phone: '' });
   const [form, setForm] = useState({ name: '', phone: '', currentPassword: '', newPassword: '', confirmPassword: '' });
   const [loading, setLoading] = useState(true);
@@ -57,27 +59,27 @@ const Profile = () => {
 
   return (
     <div style={styles.page}>
-      <div style={styles.card}>
+      <div style={{ ...styles.card, background: theme.bgCardGlass, border: `1px solid ${theme.border}` }}>
         <h1 style={styles.title}>My Profile</h1>
-        <p style={styles.subtitle}>{profile.email}</p>
+        <p style={{ ...styles.subtitle, color: theme.textAccent }}>{profile.email}</p>
 
         <form onSubmit={handleSubmit} style={styles.form}>
           <section style={styles.section}>
-            <h2 style={styles.sectionTitle}>Account Details</h2>
-            <label style={styles.label}>
+            <h2 style={{ ...styles.sectionTitle, color: theme.textPrimary }}>Account Details</h2>
+            <label style={{ ...styles.label, color: theme.textSecondary }}>
               Full Name
               <input
-                style={styles.input}
+                style={{ ...styles.input, background: theme.bgInput, borderColor: theme.borderInput, color: theme.textPrimary }}
                 type="text"
                 value={form.name}
                 onChange={e => setForm(f => ({ ...f, name: e.target.value }))}
                 placeholder="Your name"
               />
             </label>
-            <label style={styles.label}>
+            <label style={{ ...styles.label, color: theme.textSecondary }}>
               Phone Number
               <input
-                style={styles.input}
+                style={{ ...styles.input, background: theme.bgInput, borderColor: theme.borderInput, color: theme.textPrimary }}
                 type="tel"
                 value={form.phone}
                 onChange={e => setForm(f => ({ ...f, phone: e.target.value }))}
@@ -89,31 +91,31 @@ const Profile = () => {
           <div style={styles.divider} />
 
           <section style={styles.section}>
-            <h2 style={styles.sectionTitle}>Change Password <span style={styles.optional}>(optional)</span></h2>
-            <label style={styles.label}>
+            <h2 style={{ ...styles.sectionTitle, color: theme.textPrimary }}>Change Password <span style={styles.optional}>(optional)</span></h2>
+            <label style={{ ...styles.label, color: theme.textSecondary }}>
               Current Password
               <input
-                style={styles.input}
+                style={{ ...styles.input, background: theme.bgInput, borderColor: theme.borderInput, color: theme.textPrimary }}
                 type="password"
                 value={form.currentPassword}
                 onChange={e => setForm(f => ({ ...f, currentPassword: e.target.value }))}
                 placeholder="••••••••"
               />
             </label>
-            <label style={styles.label}>
+            <label style={{ ...styles.label, color: theme.textSecondary }}>
               New Password
               <input
-                style={styles.input}
+                style={{ ...styles.input, background: theme.bgInput, borderColor: theme.borderInput, color: theme.textPrimary }}
                 type="password"
                 value={form.newPassword}
                 onChange={e => setForm(f => ({ ...f, newPassword: e.target.value }))}
                 placeholder="••••••••"
               />
             </label>
-            <label style={styles.label}>
+            <label style={{ ...styles.label, color: theme.textSecondary }}>
               Confirm New Password
               <input
-                style={styles.input}
+                style={{ ...styles.input, background: theme.bgInput, borderColor: theme.borderInput, color: theme.textPrimary }}
                 type="password"
                 value={form.confirmPassword}
                 onChange={e => setForm(f => ({ ...f, confirmPassword: e.target.value }))}

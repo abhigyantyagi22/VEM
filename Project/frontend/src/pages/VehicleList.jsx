@@ -2,9 +2,11 @@ import React, { useState, useEffect } from 'react';
 import api from '../services/api';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/useAuth';
+import { useTheme } from '../context/ThemeContext';
 
 const VehicleList = () => {
   const { userId } = useAuth();
+  const { theme } = useTheme();
   const [vehicles, setVehicles] = useState([]);
   const [showModal, setShowModal] = useState(false);
   const [form, setForm] = useState({ vehicleName: '', vehicleNumber: '', vehicleType: '', purchaseDate: '' });
@@ -92,9 +94,9 @@ const VehicleList = () => {
 
   const renderModal = () => (
     <div style={styles.modalOverlay} role="presentation" onClick={closeModal}>
-      <div style={styles.modal} role="dialog" aria-modal="true" aria-labelledby="add-vehicle-title" onClick={(e) => e.stopPropagation()}>
+      <div style={{ ...styles.modal, background: theme.bgModal }} role="dialog" aria-modal="true" aria-labelledby="add-vehicle-title" onClick={(e) => e.stopPropagation()}>
         <div style={styles.modalHeader}>
-          <h2 id="add-vehicle-title" style={styles.modalTitle}>Add Vehicle</h2>
+          <h2 id="add-vehicle-title" style={{ ...styles.modalTitle, color: theme.textPrimary }}>Add Vehicle</h2>
           <button type="button" onClick={closeModal} style={styles.closeButton} aria-label="Close">×</button>
         </div>
         <form onSubmit={handleAdd} style={styles.modalForm}>
@@ -106,10 +108,10 @@ const VehicleList = () => {
               onChange={e => setForm({ ...form, vehicleName: e.target.value })}
               placeholder="Honda City"
               required
-              style={styles.input}
+              style={{ ...styles.input, background: theme.bgInput, borderColor: theme.borderInput, color: theme.textPrimary }}
             />
           </label>
-          <label style={styles.fieldLabel}>
+          <label style={{ ...styles.fieldLabel, color: theme.textSecondary }}>
             Vehicle Number
             <input
               type="text"
@@ -117,16 +119,16 @@ const VehicleList = () => {
               onChange={e => setForm({ ...form, vehicleNumber: e.target.value })}
               placeholder="MH 12 AB 1234"
               required
-              style={styles.input}
+              style={{ ...styles.input, background: theme.bgInput, borderColor: theme.borderInput, color: theme.textPrimary }}
             />
           </label>
-          <label style={styles.fieldLabel}>
+          <label style={{ ...styles.fieldLabel, color: theme.textSecondary }}>
             Vehicle Type
             <select
               value={form.vehicleType}
               onChange={e => setForm({ ...form, vehicleType: e.target.value })}
               required
-              style={styles.input}
+              style={{ ...styles.input, background: theme.bgInput, borderColor: theme.borderInput, color: theme.textPrimary }}
             >
               <option value="">Select type</option>
               <option value="Car">Car</option>
@@ -136,14 +138,14 @@ const VehicleList = () => {
               <option value="Other">Other</option>
             </select>
           </label>
-          <label style={styles.fieldLabel}>
+          <label style={{ ...styles.fieldLabel, color: theme.textSecondary }}>
             Purchase Date
             <input
               type="date"
               value={form.purchaseDate}
               onChange={e => setForm({ ...form, purchaseDate: e.target.value })}
               required
-              style={styles.input}
+              style={{ ...styles.input, background: theme.bgInput, borderColor: theme.borderInput, color: theme.textPrimary }}
             />
           </label>
           {vehicleError && <p style={styles.errorText}>{vehicleError}</p>}
@@ -173,7 +175,7 @@ const VehicleList = () => {
 
       <ul style={styles.vehicleList}>
         {vehicles.map(v => (
-          <li key={v.id} style={styles.vehicleItem}>
+          <li key={v.id} style={{ ...styles.vehicleItem, background: theme.bgItem, border: `1px solid ${theme.border}` }}>
             <div style={styles.vehicleInfo}>
               <div style={{display: 'flex', alignItems: 'center', gap: '12px'}}>
                 <button type="button" style={styles.vehicleNameLink} onClick={() => navigate(`/vehicles/${v.id}/manage`)}>

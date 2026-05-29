@@ -1,9 +1,11 @@
 import React, { useEffect, useState } from 'react';
 import { useParams } from 'react-router-dom';
 import api from '../services/api';
+import { useTheme } from '../context/ThemeContext';
 
 const DocumentsPage = () => {
   const { id } = useParams();
+  const { theme } = useTheme();
   const [doc, setDoc] = useState({ insuranceExpiry: '', pucExpiry: '', registrationExpiry: '' });
   const [history, setHistory] = useState([]);
   const [saving, setSaving] = useState(false);
@@ -112,34 +114,34 @@ const DocumentsPage = () => {
       <h2 style={styles.title}>Documents Tracker</h2>
       <p style={styles.subtitle}>Vehicle ID: {id}</p>
 
-      <form onSubmit={handleSubmit} style={styles.form}>
-        <label style={styles.label}>
+      <form onSubmit={handleSubmit} style={{ ...styles.form, background: theme.bgCardGlass, border: `1px solid ${theme.border}` }}>
+        <label style={{ ...styles.label, color: theme.textAccent }}>
           Insurance Expiry
           <input
             type="date"
-            style={styles.input}
+            style={{ ...styles.input, background: theme.bgInputAlt, borderColor: theme.borderInputAlt, color: theme.textPrimary }}
             value={doc.insuranceExpiry}
             onChange={(e) => setDoc({ ...doc, insuranceExpiry: e.target.value })}
             required
           />
         </label>
 
-        <label style={styles.label}>
+        <label style={{ ...styles.label, color: theme.textAccent }}>
           PUC Expiry
           <input
             type="date"
-            style={styles.input}
+            style={{ ...styles.input, background: theme.bgInputAlt, borderColor: theme.borderInputAlt, color: theme.textPrimary }}
             value={doc.pucExpiry}
             onChange={(e) => setDoc({ ...doc, pucExpiry: e.target.value })}
             required
           />
         </label>
 
-        <label style={styles.label}>
+        <label style={{ ...styles.label, color: theme.textAccent }}>
           Registration Expiry
           <input
             type="date"
-            style={styles.input}
+            style={{ ...styles.input, background: theme.bgInputAlt, borderColor: theme.borderInputAlt, color: theme.textPrimary }}
             value={doc.registrationExpiry}
             onChange={(e) => setDoc({ ...doc, registrationExpiry: e.target.value })}
             required
@@ -161,12 +163,12 @@ const DocumentsPage = () => {
         </div>
       </form>
 
-      <h3 style={styles.sectionTitle}>Saved History</h3>
+      <h3 style={{ ...styles.sectionTitle, color: theme.textPrimary }}>Saved History</h3>
       {history.length === 0 ? (
         <p style={styles.emptyText}>No document history yet. Add your first entry above.</p>
       ) : (
-        <table border="1" cellPadding="10" width="100%" style={styles.table}>
-          <thead style={styles.tableHead}>
+        <table border="1" cellPadding="10" width="100%" style={{ ...styles.table, background: theme.bgTable }}>
+          <thead style={{ background: theme.bgTableHead }}>
             <tr>
               <th>Version</th>
               <th>Insurance Expiry</th>
@@ -177,7 +179,7 @@ const DocumentsPage = () => {
           </thead>
           <tbody>
             {history.map((entry, index) => (
-              <tr key={entry.id || `${entry.vehicleId}-${index}`} style={index % 2 === 0 ? styles.tableRow : styles.tableRowAlt}>
+              <tr key={entry.id || `${entry.vehicleId}-${index}`} style={{ background: index % 2 === 0 ? theme.bgTableRowEven : theme.bgTableRowOdd, color: theme.textPrimary }}>
                 <td style={styles.tableCell}>{history.length - index}</td>
                 <td style={styles.tableCell}>{formatDate(entry.insuranceExpiry)}</td>
                 <td style={styles.tableCell}>{formatDate(entry.pucExpiry)}</td>

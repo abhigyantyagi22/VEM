@@ -1,9 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import { useParams } from 'react-router-dom';
 import api from '../services/api';
+import { useTheme } from '../context/ThemeContext';
 
 const MaintenancePage = () => {
     const { id } = useParams();
+    const { theme } = useTheme();
     const [logs, setLogs] = useState([]);
     const [form, setForm] = useState({ serviceType: '', cost: '', date: '', nextDue: '' });
     const [editingLogId, setEditingLogId] = useState(null);
@@ -78,14 +80,14 @@ const MaintenancePage = () => {
                 <p style={styles.subtitle}>Vehicle ID: {id}</p>
             </div>
 
-            <form onSubmit={handleSubmit} style={styles.formCard}>
+            <form onSubmit={handleSubmit} style={{ ...styles.formCard, background: theme.bgCardGlass, border: `1px solid ${theme.border}` }}>
                 <input
                     type="text"
                     placeholder="Service Type"
                     value={form.serviceType}
                     onChange={e => setForm({...form, serviceType: e.target.value})}
                     required
-                    style={styles.input}
+                    style={{ ...styles.input, background: theme.bgInputAlt, borderColor: theme.borderInputAlt, color: theme.textPrimary }}
                 />
                 <input
                     type="number"
@@ -94,7 +96,7 @@ const MaintenancePage = () => {
                     value={form.cost}
                     onChange={e => setForm({...form, cost: e.target.value})}
                     required
-                    style={styles.input}
+                    style={{ ...styles.input, background: theme.bgInputAlt, borderColor: theme.borderInputAlt, color: theme.textPrimary }}
                 />
                 <input
                     type="date"
@@ -102,14 +104,14 @@ const MaintenancePage = () => {
                     value={form.date}
                     onChange={e => setForm({...form, date: e.target.value})}
                     required
-                    style={styles.input}
+                    style={{ ...styles.input, background: theme.bgInputAlt, borderColor: theme.borderInputAlt, color: theme.textPrimary }}
                 />
                 <input
                     type="date"
                     placeholder="Next Due"
                     value={form.nextDue}
                     onChange={e => setForm({...form, nextDue: e.target.value})}
-                    style={styles.input}
+                    style={{ ...styles.input, background: theme.bgInputAlt, borderColor: theme.borderInputAlt, color: theme.textPrimary }}
                 />
                 <div style={styles.formActions}>
                     {editingLogId && (
@@ -119,14 +121,14 @@ const MaintenancePage = () => {
                 </div>
             </form>
 
-            <div style={styles.sectionCard}>
-                <h3 style={styles.sectionTitle}>Upcoming Maintenance</h3>
+            <div style={{ ...styles.sectionCard, background: theme.bgCardGlass, border: `1px solid ${theme.border}` }}>
+                <h3 style={{ ...styles.sectionTitle, color: theme.textPrimary }}>Upcoming Maintenance</h3>
                 {upcomingLogs.length === 0 ? (
                     <p style={styles.emptyText}>No upcoming maintenance due dates found.</p>
                 ) : (
                     <ul style={styles.upcomingList}>
                         {upcomingLogs.map((log) => (
-                            <li key={`upcoming-${log.id}`} style={styles.upcomingItem}>
+                            <li key={`upcoming-${log.id}`} style={{ ...styles.upcomingItem, background: theme.bgUpcomingItem, border: `1px solid ${theme.border}` }}>
                                 <div style={styles.upcomingTextGroup}>
                                     <span style={styles.upcomingService}>{log.serviceType}</span>
                                     <span style={styles.upcomingDate}>Due: {log.nextDue}</span>
@@ -141,10 +143,10 @@ const MaintenancePage = () => {
                 )}
             </div>
 
-            <div style={styles.sectionCard}>
-                <h3 style={styles.sectionTitle}>Maintenance History</h3>
-                <table border="1" cellPadding="10" width="100%" style={styles.table}>
-                    <thead style={styles.tableHead}>
+            <div style={{ ...styles.sectionCard, background: theme.bgCardGlass, border: `1px solid ${theme.border}` }}>
+                <h3 style={{ ...styles.sectionTitle, color: theme.textPrimary }}>Maintenance History</h3>
+                <table border="1" cellPadding="10" width="100%" style={{ ...styles.table, background: theme.bgTable }}>
+                    <thead style={{ background: theme.bgTableHead }}>
                         <tr>
                             <th>Date</th>
                             <th>Service</th>
@@ -157,7 +159,7 @@ const MaintenancePage = () => {
                         {logs.map((log, index) => {
                             const isPastDue = log.nextDue && new Date(log.nextDue) < new Date();
                             return (
-                                <tr key={log.id} style={index % 2 === 0 ? styles.tableRow : styles.tableRowAlt}>
+                                <tr key={log.id} style={{ background: index % 2 === 0 ? theme.bgTableRowEven : theme.bgTableRowOdd, color: theme.textPrimary }}>
                                     <td style={styles.tableCell}>{log.date}</td>
                                     <td style={styles.tableCell}>{log.serviceType}</td>
                                     <td style={styles.tableCell}>{formatRupees(log.cost)}</td>

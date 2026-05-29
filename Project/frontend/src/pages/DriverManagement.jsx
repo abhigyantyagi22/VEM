@@ -2,10 +2,12 @@ import React, { useState, useEffect } from 'react';
 import { useParams } from 'react-router-dom';
 import api from '../services/api';
 import { useAuth } from '../context/useAuth';
+import { useTheme } from '../context/ThemeContext';
 
 const DriverManagement = () => {
     const { id } = useParams();
     const { userId } = useAuth();
+    const { theme } = useTheme();
     const [vehicles, setVehicles] = useState([]);
     const [allDrivers, setAllDrivers] = useState([]);
     const [showModal, setShowModal] = useState(false);
@@ -192,13 +194,13 @@ const DriverManagement = () => {
 
     const renderModal = () => (
         <div style={styles.modalOverlay} role="presentation" onClick={closeModal}>
-            <div style={styles.modal} role="dialog" aria-modal="true" aria-labelledby="add-driver-title" onClick={(e) => e.stopPropagation()}>
+            <div style={{ ...styles.modal, background: theme.bgModal }} role="dialog" aria-modal="true" aria-labelledby="add-driver-title" onClick={(e) => e.stopPropagation()}>
                 <div style={styles.modalHeader}>
-                    <h2 id="add-driver-title" style={styles.modalTitle}>{editingDriver ? 'Edit Driver' : 'Add Driver'}</h2>
+                    <h2 id="add-driver-title" style={{ ...styles.modalTitle, color: theme.textPrimary }}>{editingDriver ? 'Edit Driver' : 'Add Driver'}</h2>
                     <button type="button" onClick={closeModal} style={styles.closeButton} aria-label="Close">×</button>
                 </div>
                 <form onSubmit={handleSubmit} style={styles.modalForm}>
-                    <label style={styles.fieldLabel}>
+                    <label style={{ ...styles.fieldLabel, color: theme.textSecondary }}>
                         Driver Name
                         <input
                             type="text"
@@ -206,10 +208,10 @@ const DriverManagement = () => {
                             onChange={e => setForm({ ...form, driverName: e.target.value })}
                             placeholder="John Doe"
                             required
-                            style={styles.input}
+                            style={{ ...styles.input, background: theme.bgInput, borderColor: theme.borderInput, color: theme.textPrimary }}
                         />
                     </label>
-                    <label style={styles.fieldLabel}>
+                    <label style={{ ...styles.fieldLabel, color: theme.textSecondary }}>
                         License Number
                         <input
                             type="text"
@@ -219,7 +221,9 @@ const DriverManagement = () => {
                             required
                             style={{
                                 ...styles.input,
-                                borderColor: isDuplicateLicense(form.licenseNumber, editingDriver) ? '#ff4757' : '#dfe6e9'
+                                background: theme.bgInput,
+                                color: theme.textPrimary,
+                                borderColor: isDuplicateLicense(form.licenseNumber, editingDriver) ? '#ff4757' : theme.borderInput,
                             }}
                         />
                         {isDuplicateLicense(form.licenseNumber, editingDriver) && (
@@ -228,7 +232,7 @@ const DriverManagement = () => {
                             </small>
                         )}
                     </label>
-                    <label style={styles.fieldLabel}>
+                    <label style={{ ...styles.fieldLabel, color: theme.textSecondary }}>
                         Contact Info (10 digits)
                         <input
                             type="tel"
@@ -242,7 +246,9 @@ const DriverManagement = () => {
                             required
                             style={{
                                 ...styles.input,
-                                borderColor: form.contact && !isValidContact(form.contact) ? '#ff4757' : '#dfe6e9'
+                                background: theme.bgInput,
+                                color: theme.textPrimary,
+                                borderColor: form.contact && !isValidContact(form.contact) ? '#ff4757' : theme.borderInput,
                             }}
                         />
                         {form.contact && !isValidContact(form.contact) && (
@@ -251,14 +257,16 @@ const DriverManagement = () => {
                             </small>
                         )}
                     </label>
-                    <label style={styles.fieldLabel}>
+                    <label style={{ ...styles.fieldLabel, color: theme.textSecondary }}>
                         Vehicle
                         <select
                             value={form.vehicleId}
                             onChange={e => setForm({ ...form, vehicleId: e.target.value })}
                             style={{
                                 ...styles.input,
-                                borderColor: vehicleAlreadyHasDriver(form.vehicleId, editingDriver) ? '#ff4757' : '#dfe6e9'
+                                background: theme.bgInput,
+                                color: theme.textPrimary,
+                                borderColor: vehicleAlreadyHasDriver(form.vehicleId, editingDriver) ? '#ff4757' : theme.borderInput,
                             }}
                         >
                             <option value="">No Vehicle</option>
@@ -308,9 +316,9 @@ const DriverManagement = () => {
 
             <ul style={styles.driverList}>
                 {scopedDrivers.map(d => (
-                    <li key={d.id} style={styles.driverItem}>
+                    <li key={d.id} style={{ ...styles.driverItem, background: theme.bgItem, border: `1px solid ${theme.border}` }}>
                         <div style={styles.driverInfo}>
-                            <strong style={styles.driverName}>{d.driverName}</strong>
+                            <strong style={{ ...styles.driverName, color: theme.textPrimary }}>{d.driverName}</strong>
                             <br />
                             <small style={styles.driverMeta}>License: {d.licenseNumber} | Contact: {d.contact}</small>
                             <br />
@@ -347,7 +355,7 @@ const DriverManagement = () => {
                 <div style={{marginTop: '20px'}}>
                     <h3 style={{marginBottom: '8px', color: '#0f766e'}}>Assign existing unassigned driver</h3>
                     <div style={{display: 'flex', gap: '12px', alignItems: 'center'}}>
-                        <select value={selectedUnassignedDriver} onChange={(e) => setSelectedUnassignedDriver(e.target.value)} style={styles.selectBox}>
+                        <select value={selectedUnassignedDriver} onChange={(e) => setSelectedUnassignedDriver(e.target.value)} style={{ ...styles.selectBox, background: theme.bgSelectBox, color: theme.textPrimary, borderColor: theme.borderSubtle }}>
                             <option value="">Select an unassigned driver</option>
                             {allDrivers.filter(d => !d.vehicleId).map(d => (
                                 <option key={d.id} value={d.id}>{d.driverName} — {d.licenseNumber}</option>

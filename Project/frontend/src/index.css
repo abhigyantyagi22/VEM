@@ -10,16 +10,25 @@
   --off-white: #f5f6f8;
   --text-main: #2d3436;
   --text-muted: #636e72;
+  --bg-app: #f5f6f8;
+}
+
+:root[data-theme="dark"] {
+  --bg-app: #0b1120;
+  --text-main: #f1f5f9;
+  --text-muted: #94a3b8;
+  color-scheme: dark;
 }
 
 body {
   margin: 0;
   font-family: 'Inter', 'SF Pro Display', 'SF Pro Text', 'Segoe UI', system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
-  background-color: var(--off-white);
+  background-color: var(--bg-app);
   color: var(--text-main);
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   text-rendering: optimizeLegibility;
+  transition: background-color 0.25s ease, color 0.25s ease;
 }
 
 html {

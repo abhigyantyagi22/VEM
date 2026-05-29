@@ -1,4 +1,5 @@
 import React, { useMemo, useState } from 'react';
+import { useTheme } from '../context/ThemeContext';
 
 const ISSUE_GUIDES = [
   {
@@ -104,6 +105,7 @@ const generateAssistantReply = (question) => {
 };
 
 const VehicleIssueChatbot = () => {
+  const { theme } = useTheme();
   const [isOpen, setIsOpen] = useState(false);
   const [input, setInput] = useState('');
   const [messages, setMessages] = useState([
@@ -161,13 +163,13 @@ const VehicleIssueChatbot = () => {
       </button>
 
       {isOpen && (
-        <section style={styles.panel} aria-label="Vehicle issue chatbot">
-          <header style={styles.header}>
+        <section style={{ ...styles.panel, background: theme.bgChatPanel, border: `1px solid ${theme.border}` }} aria-label="Vehicle issue chatbot">
+          <header style={{ ...styles.header, background: theme.bgChatHeader, borderBottom: `1px solid ${theme.border}` }}>
             <h3 style={styles.title}>Vehicle Issue Chatbot</h3>
             <p style={styles.subtitle}>Ask about breakdowns, noises, warnings, and maintenance issues.</p>
           </header>
 
-          <div style={styles.quickList}>
+          <div style={{ ...styles.quickList, background: theme.bgChatQuickList, borderBottom: `1px solid ${theme.border}` }}>
             {QUICK_QUESTIONS.map((question) => (
               <button key={question} type="button" onClick={() => sendMessage(question)} style={styles.quickButton}>
                 {question}
@@ -175,9 +177,9 @@ const VehicleIssueChatbot = () => {
             ))}
           </div>
 
-          <div style={styles.messageArea}>
+          <div style={{ ...styles.messageArea, background: theme.bgChatMessages }}>
             {messages.map((message, index) => (
-              <article key={`${message.role}-${index}`} style={message.role === 'user' ? styles.userBubble : styles.botBubble}>
+              <article key={`${message.role}-${index}`} style={message.role === 'user' ? styles.userBubble : { ...styles.botBubble, background: theme.bgChatBubble, border: `1px solid ${theme.border}` }}>
                 <strong style={styles.messageTitle}>{message.title}</strong>
                 {message.lines.map((line) => (
                   <p key={line} style={styles.messageLine}>{line}</p>
@@ -187,13 +189,13 @@ const VehicleIssueChatbot = () => {
             ))}
           </div>
 
-          <form onSubmit={handleSubmit} style={styles.form}>
+          <form onSubmit={handleSubmit} style={{ ...styles.form, background: theme.bgChatForm, borderTop: `1px solid ${theme.border}` }}>
             <input
               type="text"
               value={input}
               onChange={(event) => setInput(event.target.value)}
               placeholder="Example: my bike is overheating in traffic"
-              style={styles.input}
+              style={{ ...styles.input, background: theme.bgInput, borderColor: theme.borderInput, color: theme.textPrimary }}
             />
             <button type="submit" disabled={!canSend} style={canSend ? styles.sendButton : styles.sendButtonDisabled}>
               Send

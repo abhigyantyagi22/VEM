@@ -1,6 +1,7 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { useParams } from 'react-router-dom';
 import api from '../services/api';
+import { useTheme } from '../context/ThemeContext';
 
 const getToday = () => new Date().toISOString().split('T')[0];
 
@@ -11,6 +12,7 @@ const parseNumber = (value) => {
 
 const FuelLogs = () => {
   const { id } = useParams();
+  const { theme } = useTheme();
   const [logs, setLogs] = useState([]);
   const [showModal, setShowModal] = useState(false);
   const [editingLog, setEditingLog] = useState(null);
@@ -174,27 +176,27 @@ const FuelLogs = () => {
       </div>
 
       <div style={styles.statsGrid}>
-        <div style={styles.statCard}>
-          <div style={styles.statLabel}>Total Fuel Spent</div>
-          <div style={styles.statValue}>{formatRupees(stats.totalBill)}</div>
+        <div style={{ ...styles.statCard, background: theme.bgCardGlass, border: `1px solid ${theme.border}` }}>
+          <div style={{ ...styles.statLabel, color: theme.textAccent }}>Total Fuel Spent</div>
+          <div style={{ ...styles.statValue, color: theme.textPrimary }}>{formatRupees(stats.totalBill)}</div>
         </div>
-        <div style={styles.statCard}>
-          <div style={styles.statLabel}>Total Fuel Added</div>
-          <div style={styles.statValue}>{stats.totalFuel.toFixed(2)} L</div>
+        <div style={{ ...styles.statCard, background: theme.bgCardGlass, border: `1px solid ${theme.border}` }}>
+          <div style={{ ...styles.statLabel, color: theme.textAccent }}>Total Fuel Added</div>
+          <div style={{ ...styles.statValue, color: theme.textPrimary }}>{stats.totalFuel.toFixed(2)} L</div>
         </div>
-        <div style={styles.statCard}>
-          <div style={styles.statLabel}>Average Fuel Rate</div>
-          <div style={styles.statValue}>{formatRupees(stats.avgRate)} /L</div>
+        <div style={{ ...styles.statCard, background: theme.bgCardGlass, border: `1px solid ${theme.border}` }}>
+          <div style={{ ...styles.statLabel, color: theme.textAccent }}>Average Fuel Rate</div>
+          <div style={{ ...styles.statValue, color: theme.textPrimary }}>{formatRupees(stats.avgRate)} /L</div>
         </div>
       </div>
 
-      <div style={styles.historyCard}>
-        <h3 style={styles.historyTitle}>Fuel History</h3>
+      <div style={{ ...styles.historyCard, background: theme.bgCardGlass, border: `1px solid ${theme.border}` }}>
+        <h3 style={{ ...styles.historyTitle, color: theme.textPrimary }}>Fuel History</h3>
         {logs.length === 0 ? (
           <p style={styles.emptyText}>No fuel logs yet. Click Add Log to create your first entry.</p>
         ) : (
-          <table border="1" cellPadding="10" width="100%" style={styles.table}>
-            <thead style={styles.tableHead}>
+          <table border="1" cellPadding="10" width="100%" style={{ ...styles.table, background: theme.bgTable }}>
+            <thead style={{ background: theme.bgTableHead }}>
               <tr>
                 <th>Date</th>
                 <th>Amount (L)</th>
@@ -210,7 +212,7 @@ const FuelLogs = () => {
                 const cost = parseNumber(log.fuelCost);
                 const rate = amount > 0 ? cost / amount : 0;
                 return (
-                  <tr key={log.id} style={index % 2 === 0 ? styles.tableRow : styles.tableRowAlt}>
+                  <tr key={log.id} style={{ background: index % 2 === 0 ? theme.bgTableRowEven : theme.bgTableRowOdd, color: theme.textPrimary }}>
                     <td style={styles.tableCell}>{log.date}</td>
                     <td style={styles.tableCell}>{amount}</td>
                     <td style={styles.tableCell}>{formatRupees(rate)}</td>
@@ -236,9 +238,9 @@ const FuelLogs = () => {
 
       {showModal && (
         <div style={styles.modalOverlay} role="presentation" onClick={closeModal}>
-          <div style={styles.modal} role="dialog" aria-modal="true" aria-labelledby="fuel-modal-title" onClick={(e) => e.stopPropagation()}>
+          <div style={{ ...styles.modal, background: theme.bgModal }} role="dialog" aria-modal="true" aria-labelledby="fuel-modal-title" onClick={(e) => e.stopPropagation()}>
             <div style={styles.modalHeader}>
-              <h3 id="fuel-modal-title" style={styles.modalTitle}>{editingLog ? 'Edit Fuel Log' : 'Add Fuel Log'}</h3>
+              <h3 id="fuel-modal-title" style={{ ...styles.modalTitle, color: theme.textPrimary }}>{editingLog ? 'Edit Fuel Log' : 'Add Fuel Log'}</h3>
               <button type="button" style={styles.closeButton} onClick={closeModal} aria-label="Close">×</button>
             </div>
 
