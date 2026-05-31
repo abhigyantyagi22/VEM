@@ -43,6 +43,7 @@
 /Users/abhigyantyagi/Desktop/Projects/VEM/Project/backend/src/main/java/com/vem/backend/service/DashboardService.java
 /Users/abhigyantyagi/Desktop/Projects/VEM/Project/backend/src/main/java/com/vem/backend/service/DocumentService.java
 /Users/abhigyantyagi/Desktop/Projects/VEM/Project/backend/src/main/java/com/vem/backend/service/DriverService.java
+/Users/abhigyantyagi/Desktop/Projects/VEM/Project/backend/src/main/java/com/vem/backend/service/EmailService.java
 /Users/abhigyantyagi/Desktop/Projects/VEM/Project/backend/src/main/java/com/vem/backend/service/FuelLogService.java
 /Users/abhigyantyagi/Desktop/Projects/VEM/Project/backend/src/main/java/com/vem/backend/service/MaintenanceService.java
 /Users/abhigyantyagi/Desktop/Projects/VEM/Project/backend/src/main/java/com/vem/backend/service/NotificationService.java
