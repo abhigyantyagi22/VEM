@@ -17,6 +17,9 @@ const getStrength = (pw) => {
 
 const Register = () => {
   const [formData, setFormData] = useState({ name: '', email: '', password: '', phone: '' });
+  const [confirmPassword, setConfirmPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirm, setShowConfirm] = useState(false);
   const [error, setError] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const navigate = useNavigate();
@@ -35,6 +38,12 @@ const Register = () => {
 
     if (!/^\d{10}$/.test(formData.phone)) {
       setError('Phone number must be exactly 10 digits.');
+      setIsLoading(false);
+      return;
+    }
+
+    if (formData.password !== confirmPassword) {
+      setError('Passwords do not match.');
       setIsLoading(false);
       return;
     }
@@ -141,14 +150,19 @@ const Register = () => {
 
             <div style={styles.fieldGroup}>
               <label style={styles.label}>Password</label>
-              <input
-                type="password"
-                placeholder="••••••••"
-                value={formData.password}
-                onChange={(e) => handleChange('password', e.target.value)}
-                required
-                style={styles.input}
-              />
+              <div style={styles.passwordWrapper}>
+                <input
+                  type={showPassword ? 'text' : 'password'}
+                  placeholder="••••••••"
+                  value={formData.password}
+                  onChange={(e) => handleChange('password', e.target.value)}
+                  required
+                  style={{ ...styles.input, paddingRight: '44px' }}
+                />
+                <button type="button" onClick={() => setShowPassword(p => !p)} style={styles.eyeBtn} tabIndex={-1}>
+                  {showPassword ? '🙈' : '👁'}
+                </button>
+              </div>
               {(() => {
                 const s = getStrength(formData.password);
                 if (!s) return <p style={styles.passwordHint}>At least 6 characters</p>;
@@ -161,6 +175,35 @@ const Register = () => {
                   </div>
                 );
               })()}
+            </div>
+
+            <div style={styles.fieldGroup}>
+              <label style={styles.label}>Confirm Password</label>
+              <div style={styles.passwordWrapper}>
+                <input
+                  type={showConfirm ? 'text' : 'password'}
+                  placeholder="••••••••"
+                  value={confirmPassword}
+                  onChange={(e) => setConfirmPassword(e.target.value)}
+                  required
+                  style={{
+                    ...styles.input,
+                    paddingRight: '44px',
+                    borderColor: confirmPassword && confirmPassword !== formData.password
+                      ? 'rgba(239,68,68,0.6)'
+                      : 'rgba(20,184,166,0.4)',
+                  }}
+                />
+                <button type="button" onClick={() => setShowConfirm(p => !p)} style={styles.eyeBtn} tabIndex={-1}>
+                  {showConfirm ? '🙈' : '👁'}
+                </button>
+              </div>
+              {confirmPassword && confirmPassword !== formData.password && (
+                <p style={{ margin: '3px 0 0', fontSize: '11px', color: '#ef4444', fontWeight: 600 }}>Passwords do not match</p>
+              )}
+              {confirmPassword && confirmPassword === formData.password && (
+                <p style={{ margin: '3px 0 0', fontSize: '11px', color: '#10b981', fontWeight: 600 }}>✓ Passwords match</p>
+              )}
             </div>
 
             <button
@@ -260,6 +303,22 @@ const styles = {
     fontSize: '12px',
     color: '#0a3d3a',
     fontWeight: 500,
+  },
+  passwordWrapper: {
+    position: 'relative',
+    display: 'flex',
+    alignItems: 'center',
+  },
+  eyeBtn: {
+    position: 'absolute',
+    right: '12px',
+    background: 'transparent',
+    border: 'none',
+    cursor: 'pointer',
+    fontSize: '16px',
+    padding: '0',
+    lineHeight: 1,
+    color: '#0a3d3a',
   },
   form: {
     display: 'grid',

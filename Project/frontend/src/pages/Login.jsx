@@ -8,6 +8,7 @@ const Login = () => {
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
   const navigate = useNavigate();
   const { login } = useAuth();
 
@@ -68,14 +69,19 @@ const Login = () => {
 
             <div style={styles.fieldGroup}>
               <label style={styles.label}>Password</label>
-              <input
-                type="password"
-                placeholder="••••••••"
-                value={password}
-                onChange={(e) => { setPassword(e.target.value); setError(''); }}
-                required
-                style={styles.input}
-              />
+              <div style={styles.passwordWrapper}>
+                <input
+                  type={showPassword ? 'text' : 'password'}
+                  placeholder="••••••••"
+                  value={password}
+                  onChange={(e) => { setPassword(e.target.value); setError(''); }}
+                  required
+                  style={{ ...styles.input, paddingRight: '44px' }}
+                />
+                <button type="button" onClick={() => setShowPassword(p => !p)} style={styles.eyeBtn} tabIndex={-1}>
+                  {showPassword ? '🙈' : '👁'}
+                </button>
+              </div>
             </div>
 
             <button 
@@ -190,6 +196,22 @@ const styles = {
     color: '#0a3d3a',
     textTransform: 'uppercase',
     letterSpacing: '0.5px',
+  },
+  passwordWrapper: {
+    position: 'relative',
+    display: 'flex',
+    alignItems: 'center',
+  },
+  eyeBtn: {
+    position: 'absolute',
+    right: '12px',
+    background: 'transparent',
+    border: 'none',
+    cursor: 'pointer',
+    fontSize: '16px',
+    padding: '0',
+    lineHeight: 1,
+    color: '#0a3d3a',
   },
   input: {
     width: '100%',
