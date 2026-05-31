@@ -64,6 +64,16 @@ public class AuthController {
         }
     }
 
+    @PostMapping("/verify-phone")
+    public ResponseEntity<?> verifyPhone(@RequestBody java.util.Map<String, String> body) {
+        try {
+            authService.verifyPhoneForReset(body.get("email"), body.get("phone"));
+            return ResponseEntity.ok("Phone verified");
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.badRequest().body(e.getMessage());
+        }
+    }
+
     @PostMapping("/reset-password")
     public ResponseEntity<?> resetPassword(@RequestBody LoginDto loginDto) {
         try {

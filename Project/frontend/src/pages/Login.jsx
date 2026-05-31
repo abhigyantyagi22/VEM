@@ -9,6 +9,19 @@ const Login = () => {
   const [error, setError] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
+
+  // Forgot password modal state
+  const [showForgot, setShowForgot] = useState(false);
+  const [forgotStep, setForgotStep] = useState(1); // 1 = phone verify, 2 = new password, 3 = success
+  const [forgotEmail, setForgotEmail] = useState('');
+  const [forgotPhone, setForgotPhone] = useState('');
+  const [newPassword, setNewPassword] = useState('');
+  const [confirmNew, setConfirmNew] = useState('');
+  const [showNewPw, setShowNewPw] = useState(false);
+  const [showConfirmPw, setShowConfirmPw] = useState(false);
+  const [forgotError, setForgotError] = useState('');
+  const [forgotLoading, setForgotLoading] = useState(false);
+
   const navigate = useNavigate();
   const { login } = useAuth();
 
@@ -34,14 +47,185 @@ const Login = () => {
     }
   };
 
+  const openForgot = () => {
+    setForgotEmail(email.trim());
+    setForgotPhone('');
+    setNewPassword('');
+    setConfirmNew('');
+    setForgotError('');
+    setForgotStep(1);
+    setShowForgot(true);
+  };
+
+  const closeForgot = () => {
+    setShowForgot(false);
+    setForgotStep(1);
+    setForgotError('');
+  };
+
+  const handleVerifyPhone = async (e) => {
+    e.preventDefault();
+    if (!/^\d{10}$/.test(forgotPhone)) {
+      setForgotError('Phone number must be exactly 10 digits.');
+      return;
+    }
+    setForgotLoading(true);
+    setForgotError('');
+    try {
+      await api.post('/auth/verify-phone', { email: forgotEmail.trim(), phone: forgotPhone });
+      setForgotStep(2);
+    } catch (err) {
+      setForgotError(err.response?.data || 'Verification failed. Please try again.');
+    } finally {
+      setForgotLoading(false);
+    }
+  };
+
+  const handleResetPassword = async (e) => {
+    e.preventDefault();
+    if (newPassword.length < 6) {
+      setForgotError('Password must be at least 6 characters.');
+      return;
+    }
+    if (newPassword !== confirmNew) {
+      setForgotError('Passwords do not match.');
+      return;
+    }
+    setForgotLoading(true);
+    setForgotError('');
+    try {
+      await api.post('/auth/reset-password', { email: forgotEmail.trim(), password: newPassword });
+      setForgotStep(3);
+    } catch (err) {
+      setForgotError(err.response?.data || 'Could not reset password. Please try again.');
+    } finally {
+      setForgotLoading(false);
+    }
+  };
+
+  const renderForgotModal = () => (
+    <div style={styles.modalOverlay} onClick={closeForgot}>
+      <div style={styles.modalCard} onClick={e => e.stopPropagation()}>
+        {/* Step 1 — Phone Verification */}
+        {forgotStep === 1 && (
+          <>
+            <h3 style={styles.modalTitle}>Forgot Password</h3>
+            <p style={styles.modalSub}>Enter the email and registered phone number to verify your identity.</p>
+            <form onSubmit={handleVerifyPhone} style={styles.modalForm}>
+              <div style={styles.modalField}>
+                <label style={styles.modalLabel}>Email Address</label>
+                <input
+                  type="email"
+                  value={forgotEmail}
+                  onChange={e => setForgotEmail(e.target.value)}
+                  required
+                  style={styles.modalInput}
+                  placeholder="you@example.com"
+                />
+              </div>
+              <div style={styles.modalField}>
+                <label style={styles.modalLabel}>Registered Phone Number</label>
+                <input
+                  type="tel"
+                  value={forgotPhone}
+                  onChange={e => setForgotPhone(e.target.value.replace(/\D/g, '').slice(0, 10))}
+                  required
+                  maxLength={10}
+                  style={styles.modalInput}
+                  placeholder="10-digit number"
+                />
+              </div>
+              {forgotError && <p style={styles.modalError}>{forgotError}</p>}
+              <div style={styles.modalActions}>
+                <button type="button" onClick={closeForgot} style={styles.modalCancelBtn}>Cancel</button>
+                <button type="submit" disabled={forgotLoading} style={styles.modalPrimaryBtn}>
+                  {forgotLoading ? 'Verifying...' : 'Verify'}
+                </button>
+              </div>
+            </form>
+          </>
+        )}
+
+        {/* Step 2 — New Password */}
+        {forgotStep === 2 && (
+          <>
+            <h3 style={styles.modalTitle}>Create New Password</h3>
+            <p style={styles.modalSub}>Phone verified ✓ — Enter your new password below.</p>
+            <form onSubmit={handleResetPassword} style={styles.modalForm}>
+              <div style={styles.modalField}>
+                <label style={styles.modalLabel}>New Password</label>
+                <div style={styles.pwWrap}>
+                  <input
+                    type={showNewPw ? 'text' : 'password'}
+                    value={newPassword}
+                    onChange={e => setNewPassword(e.target.value)}
+                    required
+                    style={{ ...styles.modalInput, paddingRight: '44px' }}
+                    placeholder="••••••••"
+                  />
+                  <button type="button" onClick={() => setShowNewPw(p => !p)} style={styles.modalEyeBtn} tabIndex={-1}>
+                    {showNewPw ? '🙈' : '👁'}
+                  </button>
+                </div>
+              </div>
+              <div style={styles.modalField}>
+                <label style={styles.modalLabel}>Confirm New Password</label>
+                <div style={styles.pwWrap}>
+                  <input
+                    type={showConfirmPw ? 'text' : 'password'}
+                    value={confirmNew}
+                    onChange={e => setConfirmNew(e.target.value)}
+                    required
+                    style={{ ...styles.modalInput, paddingRight: '44px' }}
+                    placeholder="••••••••"
+                  />
+                  <button type="button" onClick={() => setShowConfirmPw(p => !p)} style={styles.modalEyeBtn} tabIndex={-1}>
+                    {showConfirmPw ? '🙈' : '👁'}
+                  </button>
+                </div>
+                {confirmNew && confirmNew !== newPassword && (
+                  <p style={{ margin: '3px 0 0', fontSize: '11px', color: '#ef4444', fontWeight: 600 }}>Passwords do not match</p>
+                )}
+                {confirmNew && confirmNew === newPassword && (
+                  <p style={{ margin: '3px 0 0', fontSize: '11px', color: '#10b981', fontWeight: 600 }}>✓ Passwords match</p>
+                )}
+              </div>
+              {forgotError && <p style={styles.modalError}>{forgotError}</p>}
+              <div style={styles.modalActions}>
+                <button type="button" onClick={() => setForgotStep(1)} style={styles.modalCancelBtn}>Back</button>
+                <button type="submit" disabled={forgotLoading} style={styles.modalPrimaryBtn}>
+                  {forgotLoading ? 'Resetting...' : 'Reset Password'}
+                </button>
+              </div>
+            </form>
+          </>
+        )}
+
+        {/* Step 3 — Success */}
+        {forgotStep === 3 && (
+          <div style={{ textAlign: 'center', padding: '8px 0' }}>
+            <div style={{ fontSize: '48px', marginBottom: '12px' }}>✅</div>
+            <h3 style={{ ...styles.modalTitle, marginBottom: '8px' }}>Password Reset!</h3>
+            <p style={styles.modalSub}>Your password has been updated successfully.</p>
+            <button
+              type="button"
+              onClick={() => { closeForgot(); }}
+              style={{ ...styles.modalPrimaryBtn, marginTop: '20px', width: '100%' }}
+            >
+              Back to Login
+            </button>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+
   return (
     <div style={styles.container}>
       <div style={styles.backgroundBlur} />
-      
+
       <div style={styles.content}>
-        {/* Login Card */}
         <div style={styles.card}>
-          {/* Branding Inside Card */}
           <div style={styles.cardBranding}>
             <div style={styles.logo}>🛞</div>
             <h1 style={styles.brandText}>WheelSync</h1>
@@ -82,10 +266,13 @@ const Login = () => {
                   {showPassword ? '🙈' : '👁'}
                 </button>
               </div>
+              <button type="button" onClick={openForgot} style={styles.forgotLink}>
+                Forgot Password?
+              </button>
             </div>
 
-            <button 
-              type="submit" 
+            <button
+              type="submit"
               disabled={isLoading}
               style={{...styles.loginButton, opacity: isLoading ? 0.7 : 1}}
             >
@@ -103,6 +290,8 @@ const Login = () => {
           </p>
         </div>
       </div>
+
+      {showForgot && renderForgotModal()}
     </div>
   );
 };
@@ -213,6 +402,18 @@ const styles = {
     lineHeight: 1,
     color: '#0a3d3a',
   },
+  forgotLink: {
+    background: 'transparent',
+    border: 'none',
+    color: '#0a3d3a',
+    fontSize: '12px',
+    fontWeight: 700,
+    cursor: 'pointer',
+    textAlign: 'right',
+    padding: 0,
+    textDecoration: 'underline',
+    textUnderlineOffset: '3px',
+  },
   input: {
     width: '100%',
     padding: '11px 16px',
@@ -266,6 +467,120 @@ const styles = {
     textDecoration: 'none',
     fontWeight: 700,
     transition: 'all 0.3s ease',
+  },
+  // Forgot Password Modal
+  modalOverlay: {
+    position: 'fixed',
+    inset: 0,
+    background: 'rgba(15,23,42,0.6)',
+    backdropFilter: 'blur(10px)',
+    WebkitBackdropFilter: 'blur(10px)',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    padding: '24px',
+    zIndex: 9000,
+  },
+  modalCard: {
+    width: '100%',
+    maxWidth: '420px',
+    background: 'rgba(255,255,255,0.96)',
+    borderRadius: '22px',
+    padding: '28px 28px 24px',
+    boxShadow: '0 30px 60px rgba(0,0,0,0.25)',
+    border: '1px solid rgba(20,184,166,0.2)',
+  },
+  modalTitle: {
+    margin: '0 0 6px',
+    fontSize: '20px',
+    fontWeight: 800,
+    color: '#0f172a',
+  },
+  modalSub: {
+    margin: '0 0 20px',
+    fontSize: '13px',
+    color: '#475569',
+    lineHeight: 1.5,
+  },
+  modalForm: {
+    display: 'grid',
+    gap: '14px',
+  },
+  modalField: {
+    display: 'grid',
+    gap: '5px',
+  },
+  modalLabel: {
+    fontSize: '12px',
+    fontWeight: 700,
+    color: '#475569',
+    textTransform: 'uppercase',
+    letterSpacing: '0.4px',
+  },
+  modalInput: {
+    width: '100%',
+    padding: '11px 14px',
+    borderRadius: '12px',
+    border: '1px solid #dbe3ee',
+    background: '#f8fafc',
+    fontSize: '14px',
+    color: '#1f2937',
+    outline: 'none',
+    boxSizing: 'border-box',
+    fontFamily: 'inherit',
+  },
+  pwWrap: {
+    position: 'relative',
+    display: 'flex',
+    alignItems: 'center',
+  },
+  modalEyeBtn: {
+    position: 'absolute',
+    right: '12px',
+    background: 'transparent',
+    border: 'none',
+    cursor: 'pointer',
+    fontSize: '15px',
+    padding: 0,
+    color: '#475569',
+  },
+  modalError: {
+    margin: 0,
+    fontSize: '13px',
+    color: '#dc2626',
+    fontWeight: 600,
+    background: 'rgba(239,68,68,0.08)',
+    border: '1px solid rgba(239,68,68,0.2)',
+    borderRadius: '8px',
+    padding: '10px 12px',
+  },
+  modalActions: {
+    display: 'flex',
+    gap: '10px',
+    marginTop: '4px',
+  },
+  modalCancelBtn: {
+    flex: 1,
+    padding: '11px',
+    borderRadius: '12px',
+    border: '1px solid #e2e8f0',
+    background: '#f1f5f9',
+    color: '#475569',
+    fontWeight: 700,
+    fontSize: '14px',
+    cursor: 'pointer',
+  },
+  modalPrimaryBtn: {
+    flex: 1,
+    padding: '11px',
+    borderRadius: '12px',
+    border: 'none',
+    background: 'linear-gradient(135deg, #14b8a6, #0f766e)',
+    color: '#fff',
+    fontWeight: 700,
+    fontSize: '14px',
+    cursor: 'pointer',
+    boxShadow: '0 6px 16px rgba(15,118,110,0.3)',
   },
 };
 

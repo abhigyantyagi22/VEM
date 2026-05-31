@@ -122,6 +122,14 @@ public class AuthService {
         return response;
     }
 
+    public void verifyPhoneForReset(String email, String phone) {
+        User user = userRepository.findByEmail(email)
+                .orElseThrow(() -> new IllegalArgumentException("No account found with this email."));
+        if (user.getPhone() == null || !user.getPhone().equals(phone)) {
+            throw new IllegalArgumentException("Phone number does not match our records.");
+        }
+    }
+
     public String resetPassword(String email, String newPassword) {
         Optional<User> userOptional = userRepository.findByEmail(email);
         if (!userOptional.isPresent()) {
