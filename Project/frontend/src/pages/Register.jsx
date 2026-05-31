@@ -19,6 +19,7 @@ const Register = () => {
   const [formData, setFormData] = useState({ name: '', email: '', password: '', phone: '' });
   const [error, setError] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+  const [registered, setRegistered] = useState(false);
   const navigate = useNavigate();
 
   const handleRegister = async (e) => {
@@ -47,7 +48,7 @@ const Register = () => {
 
     try {
       await api.post('/auth/register', formData);
-      navigate('/login');
+      setRegistered(true);
     } catch (err) {
         const status = err?.response?.status;
         if (status === 400) {
@@ -65,6 +66,36 @@ const Register = () => {
   const handleChange = (field, value) => {
     setFormData({ ...formData, [field]: value });
   };
+
+  if (registered) {
+    return (
+      <div style={styles.container}>
+        <div style={styles.backgroundBlur} />
+        <div style={styles.content}>
+          <div style={styles.card}>
+            <div style={styles.cardBranding}>
+              <div style={styles.logo}>🛞</div>
+              <h1 style={styles.brandText}>WheelSync</h1>
+            </div>
+            <div style={{ textAlign: 'center', padding: '8px 0' }}>
+              <div style={{ fontSize: '48px', marginBottom: '12px' }}>📧</div>
+              <h2 style={{ margin: '0 0 8px', fontSize: '22px', fontWeight: 800, color: '#0d5d56' }}>Check your email</h2>
+              <p style={{ margin: '0 0 20px', fontSize: '14px', color: '#0a3d3a', lineHeight: 1.6 }}>
+                We sent a verification link to <strong>{formData.email}</strong>.<br />
+                Click the link to activate your account.
+              </p>
+              <p style={{ margin: 0, fontSize: '12px', color: '#0a3d3a' }}>
+                Already verified?{' '}
+                <span onClick={() => navigate('/login')} style={{ color: '#000', fontWeight: 700, cursor: 'pointer' }}>
+                  Sign in
+                </span>
+              </p>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div style={styles.container}>

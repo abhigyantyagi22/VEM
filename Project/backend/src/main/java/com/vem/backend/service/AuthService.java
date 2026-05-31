@@ -11,18 +11,22 @@ import org.springframework.stereotype.Service;
 
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
+import java.time.LocalDateTime;
 import java.util.Optional;
+import java.util.UUID;
 
 @Service
 public class AuthService {
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
     private final JwtUtil jwtUtil;
+    private final EmailService emailService;
 
-    public AuthService(UserRepository userRepository, PasswordEncoder passwordEncoder, JwtUtil jwtUtil) {
+    public AuthService(UserRepository userRepository, PasswordEncoder passwordEncoder, JwtUtil jwtUtil, EmailService emailService) {
         this.userRepository = userRepository;
         this.passwordEncoder = passwordEncoder;
         this.jwtUtil = jwtUtil;
+        this.emailService = emailService;
     }
 
     public User registerUser(RegisterDto dto) {
@@ -34,7 +38,21 @@ public class AuthService {
         user.setEmail(dto.getEmail());
         user.setPassword(passwordEncoder.encode(dto.getPassword()));
         user.setPhone(dto.getPhone());
-        return userRepository.save(user);
+        user.setEmailVerified(false);
+
+        String token = UUID.randomUUID().toString();
+        user.setVerificationToken(token);
+        user.setVerificationTokenExpiry(LocalDateTime.now().plusHours(24));
+
+        userRepository.save(user);
+
+        try {
+            emailService.sendVerificationEmail(user.getEmail(), token);
+        } catch (Exception e) {
+            System.err.println("[AuthService] Failed to send verification email: " + e.getMessage());
+        }
+
+        return user;
     }
 
     public String loginUser(LoginDto dto) {
@@ -55,6 +73,9 @@ public class AuthService {
             boolean legacySha256Match = isSha256Hex(storedPassword) && sha256Hex(rawPassword).equalsIgnoreCase(storedPassword);
 
             if (bcryptMatch || legacyPlaintextMatch || legacySha256Match) {
+                if (!user.isEmailVerified()) {
+                    throw new IllegalArgumentException("EMAIL_NOT_VERIFIED");
+                }
                 // Migrate legacy password formats to BCrypt on successful login.
                 if ((legacyPlaintextMatch || legacySha256Match) && !bcryptMatch) {
                     user.setPassword(passwordEncoder.encode(rawPassword));
@@ -120,6 +141,38 @@ public class AuthService {
         response.setEmail(user.getEmail());
         response.setPhone(user.getPhone());
         return response;
+    }
+
+    public String verifyEmail(String token) {
+        User user = userRepository.findByVerificationToken(token)
+                .orElseThrow(() -> new IllegalArgumentException("Invalid or expired verification link."));
+
+        if (user.getVerificationTokenExpiry() == null || user.getVerificationTokenExpiry().isBefore(LocalDateTime.now())) {
+            throw new IllegalArgumentException("Verification link has expired. Please request a new one.");
+        }
+
+        user.setEmailVerified(true);
+        user.setVerificationToken(null);
+        user.setVerificationTokenExpiry(null);
+        userRepository.save(user);
+        return "Email verified successfully";
+    }
+
+    public String resendVerification(String email) {
+        User user = userRepository.findByEmail(email)
+                .orElseThrow(() -> new IllegalArgumentException("No account found with that email."));
+
+        if (user.isEmailVerified()) {
+            throw new IllegalArgumentException("This email is already verified.");
+        }
+
+        String token = UUID.randomUUID().toString();
+        user.setVerificationToken(token);
+        user.setVerificationTokenExpiry(LocalDateTime.now().plusHours(24));
+        userRepository.save(user);
+
+        emailService.sendVerificationEmail(email, token);
+        return "Verification email sent";
     }
 
     public String resetPassword(String email, String newPassword) {

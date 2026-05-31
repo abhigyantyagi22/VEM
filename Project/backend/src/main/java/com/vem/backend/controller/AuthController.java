@@ -64,6 +64,24 @@ public class AuthController {
         }
     }
 
+    @GetMapping("/verify")
+    public ResponseEntity<?> verifyEmail(@RequestParam String token) {
+        try {
+            return ResponseEntity.ok(authService.verifyEmail(token));
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.badRequest().body(e.getMessage());
+        }
+    }
+
+    @PostMapping("/resend-verification")
+    public ResponseEntity<?> resendVerification(@RequestBody LoginDto loginDto) {
+        try {
+            return ResponseEntity.ok(authService.resendVerification(loginDto.getEmail()));
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.badRequest().body(e.getMessage());
+        }
+    }
+
     @PostMapping("/reset-password")
     public ResponseEntity<?> resetPassword(@RequestBody LoginDto loginDto) {
         try {

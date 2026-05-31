@@ -8,26 +8,38 @@ const Login = () => {
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+  const [notVerified, setNotVerified] = useState(false);
+  const [resendStatus, setResendStatus] = useState('');
   const navigate = useNavigate();
   const { login } = useAuth();
+
+  const handleResend = async () => {
+    setResendStatus('Sending...');
+    try {
+      await api.post('/auth/resend-verification', { email });
+      setResendStatus('Sent! Check your inbox.');
+    } catch {
+      setResendStatus('Failed to resend. Please try again.');
+    }
+  };
 
   const handleLogin = async (e) => {
     e.preventDefault();
     setIsLoading(true);
+    setNotVerified(false);
+    setResendStatus('');
     try {
       const res = await api.post('/auth/login', { email: email.trim(), password });
       const token = typeof res.data === 'string' ? res.data : (res.data?.token || res.data?.accessToken || JSON.stringify(res.data));
-      console.log('[Login] Login successful, token received:', token.substring(0, 50) + '...');
       login(token);
-      console.log('[Login] Called login() with token');
-      const stored = localStorage.getItem('token');
-      console.log('[Login] Token in localStorage after login():', stored ? stored.substring(0, 50) + '...' : 'null');
       navigate('/dashboard');
     } catch (err) {
-      console.error('[Login] Error:', err);
-      // Do not display long backend error messages to users. Show a concise message.
       const status = err?.response?.status;
-      if (status === 400) {
+      const data = err?.response?.data;
+      if (data === 'EMAIL_NOT_VERIFIED') {
+        setNotVerified(true);
+        setError('Please verify your email before logging in.');
+      } else if (status === 400) {
         setError('Invalid email or password.');
       } else if (status >= 500) {
         setError('Server error. Please try again later.');
@@ -59,6 +71,14 @@ const Login = () => {
 
           <form onSubmit={handleLogin} style={styles.form}>
             {error && <div style={styles.errorBox}>{error}</div>}
+            {notVerified && (
+              <div style={{ textAlign: 'center' }}>
+                <button type="button" onClick={handleResend} style={styles.resendBtn}>
+                  Resend verification email
+                </button>
+                {resendStatus && <p style={{ margin: '6px 0 0', fontSize: '12px', color: resendStatus.startsWith('Sent') ? '#10b981' : '#ef4444', fontWeight: 600 }}>{resendStatus}</p>}
+              </div>
+            )}
 
             <div style={styles.fieldGroup}>
               <label style={styles.label}>Email Address</label>
@@ -218,6 +238,16 @@ const styles = {
     color: '#b91c1c',
     fontSize: '13px',
     fontWeight: 600,
+  },
+  resendBtn: {
+    padding: '8px 18px',
+    borderRadius: '10px',
+    border: '1px solid rgba(20,184,166,0.5)',
+    background: 'rgba(20,184,166,0.12)',
+    color: '#0d5d56',
+    fontWeight: 700,
+    fontSize: '13px',
+    cursor: 'pointer',
   },
   loginButton: {
     width: '100%',
