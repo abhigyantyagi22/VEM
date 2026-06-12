@@ -3,761 +3,517 @@ import { BarChart, Bar, XAxis, YAxis, Tooltip, CartesianGrid, ResponsiveContaine
 import api from '../services/api';
 import { useAuth } from '../context/useAuth';
 import VehicleIssueChatbot from '../components/VehicleIssueChatbot';
-import { useTheme } from '../context/ThemeContext';
 import Skeleton from '../components/Skeleton';
 
-const NAV_GRADIENT = 'linear-gradient(130deg, rgba(15, 23, 42, 0.72), rgba(15, 118, 110, 0.4))';
-const NAV_ACTIVE_GRADIENT = 'linear-gradient(130deg, rgba(20, 184, 166, 0.84), rgba(13, 148, 136, 0.72))';
+const VEHICLE_TYPES = ['Car', 'Bike', 'Truck', 'Van', 'Other'];
+
+const formatRupees = (value) =>
+  new Intl.NumberFormat('en-IN', {
+    style: 'currency',
+    currency: 'INR',
+    maximumFractionDigits: 2,
+  }).format(Number(value || 0));
 
 const Dashboard = () => {
-    const { userId } = useAuth();
-    const { theme } = useTheme();
-    const [vehicles, setVehicles] = useState([]);
-    const [selectedVehicle, setSelectedVehicle] = useState("");
-    const [dashboardData, setDashboardData] = useState(null);
-    const [loading, setLoading] = useState(true);
-    const [showVehicleModal, setShowVehicleModal] = useState(false);
-    const [vehicleForm, setVehicleForm] = useState({
-        vehicleName: '',
-        vehicleNumber: '',
-        vehicleType: '',
-        purchaseDate: '',
-    });
-    const [addingVehicle, setAddingVehicle] = useState(false);
-    const [vehicleError, setVehicleError] = useState('');
-    const [fleetData, setFleetData] = useState(null);
+  const { userId } = useAuth();
+  const [vehicles, setVehicles] = useState([]);
+  const [selectedVehicle, setSelectedVehicle] = useState('');
+  const [dashboardData, setDashboardData] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [showVehicleModal, setShowVehicleModal] = useState(false);
+  const [vehicleForm, setVehicleForm] = useState({
+    vehicleName: '',
+    vehicleNumber: '',
+    vehicleType: '',
+    purchaseDate: '',
+  });
+  const [addingVehicle, setAddingVehicle] = useState(false);
+  const [vehicleError, setVehicleError] = useState('');
+  const [fleetData, setFleetData] = useState(null);
+  const [downloadingPdf, setDownloadingPdf] = useState(false);
+  const [sendingDigest, setSendingDigest] = useState(false);
+  const [toast, setToast] = useState(null);
 
-    useEffect(() => {
-        const fetchVehicles = async () => {
-            if (!userId) {
-                console.log('[Dashboard] Skipping fetchVehicles: userId is', userId);
-                setLoading(false);
-                return;
-            }
-            try {
-                console.log('[Dashboard] Fetching vehicles for userId:', userId);
-                const res = await api.get(`/vehicles?userId=${userId}`);
-                setVehicles(res.data);
-                if (res.data.length > 0) {
-                    setSelectedVehicle(res.data[0].id);
-                } else {
-                    setLoading(false); 
-                }
-            } catch (err) {
-                console.error('[Dashboard] Error fetching vehicles:', err);
-                setLoading(false);
-            }
-        };
-        fetchVehicles();
-    }, [userId]);
-
-    useEffect(() => {
-        if (!userId) return;
-        api.get('/dashboard/fleet')
-            .then(res => setFleetData(res.data))
-            .catch(() => {});
-    }, [userId]);
-
-    useEffect(() => {
-        const fetchDashboardData = async () => {
-            if (!selectedVehicle) return;
-            setLoading(true);
-            try {
-                const res = await api.get(`/dashboard/${selectedVehicle}`);
-                setDashboardData(res.data);
-            } catch (err) {
-                console.error(err);
-            } finally {
-                setLoading(false);
-            }
-        };
-        fetchDashboardData();
-    }, [selectedVehicle]);
-
-    const chartData = dashboardData?.monthlyExpenses 
-        ? Object.entries(dashboardData.monthlyExpenses).map(([month, cost]) => ({ month, cost }))
-        : [];
-
-    const formatRupees = (value) => {
-        return new Intl.NumberFormat('en-IN', {
-            style: 'currency',
-            currency: 'INR',
-            maximumFractionDigits: 2,
-        }).format(Number(value || 0));
-    };
-
-    const resetVehicleForm = () => {
-        setVehicleForm({
-            vehicleName: '',
-            vehicleNumber: '',
-            vehicleType: '',
-            purchaseDate: '',
-        });
-        setVehicleError('');
-    };
-
-    const closeVehicleModal = () => {
-        setShowVehicleModal(false);
-        resetVehicleForm();
-    };
-
-    const handleAddVehicle = async (e) => {
-        e.preventDefault();
-        setAddingVehicle(true);
-        setVehicleError('');
-
-        try {
-            const res = await api.post('/vehicles', { ...vehicleForm, userId });
-            setVehicles(prev => [...prev, res.data]);
-            setSelectedVehicle(res.data.id);
-            closeVehicleModal();
-        } catch (err) {
-            console.error(err);
-            const message = err.response?.data || err.message || 'Please check the details and try again.';
-            setVehicleError(`Could not add vehicle. ${message}`);
-        } finally {
-            setAddingVehicle(false);
+  useEffect(() => {
+    const fetchVehicles = async () => {
+      if (!userId) {
+        setLoading(false);
+        return;
+      }
+      try {
+        const res = await api.get(`/vehicles?userId=${userId}`);
+        setVehicles(res.data);
+        if (res.data.length > 0) {
+          setSelectedVehicle(res.data[0].id);
+        } else {
+          setLoading(false);
         }
+      } catch (err) {
+        console.error('[Dashboard] Error fetching vehicles:', err);
+        setLoading(false);
+      }
     };
+    fetchVehicles();
+  }, [userId]);
 
-    const renderVehicleModal = () => (
-        <div style={styles.modalOverlay} role="presentation" onClick={closeVehicleModal}>
-            <div style={{ ...styles.modal, background: theme.bgModal }} role="dialog" aria-modal="true" aria-labelledby="add-vehicle-title" onClick={(e) => e.stopPropagation()}>
-                <div style={styles.modalHeader}>
-                    <h2 id="add-vehicle-title" style={{ ...styles.modalTitle, color: theme.textPrimary }}>Add Vehicle</h2>
-                    <button type="button" onClick={closeVehicleModal} style={styles.closeButton} aria-label="Close">×</button>
-                </div>
-                <form onSubmit={handleAddVehicle} style={styles.modalForm}>
-                    <label style={{ ...styles.fieldLabel, color: theme.textSecondary }}>
-                        Vehicle Name
-                        <input
-                            type="text"
-                            value={vehicleForm.vehicleName}
-                            onChange={e => setVehicleForm({ ...vehicleForm, vehicleName: e.target.value })}
-                            placeholder="Honda City"
-                            required
-                            style={{ ...styles.input, background: theme.bgInput, borderColor: theme.borderInput, color: theme.textPrimary }}
-                        />
-                    </label>
-                    <label style={{ ...styles.fieldLabel, color: theme.textSecondary }}>
-                        Vehicle Number
-                        <input
-                            type="text"
-                            value={vehicleForm.vehicleNumber}
-                            onChange={e => setVehicleForm({ ...vehicleForm, vehicleNumber: e.target.value })}
-                            placeholder="MH 12 AB 1234"
-                            required
-                            style={{ ...styles.input, background: theme.bgInput, borderColor: theme.borderInput, color: theme.textPrimary }}
-                        />
-                    </label>
-                    <label style={{ ...styles.fieldLabel, color: theme.textSecondary }}>
-                        Vehicle Type
-                        <select
-                            value={vehicleForm.vehicleType}
-                            onChange={e => setVehicleForm({ ...vehicleForm, vehicleType: e.target.value })}
-                            required
-                            style={{ ...styles.input, background: theme.bgInput, borderColor: theme.borderInput, color: theme.textPrimary }}
-                        >
-                            <option value="">Select type</option>
-                            <option value="Car">Car</option>
-                            <option value="Bike">Bike</option>
-                            <option value="Truck">Truck</option>
-                            <option value="Van">Van</option>
-                            <option value="Other">Other</option>
-                        </select>
-                    </label>
-                    <label style={{ ...styles.fieldLabel, color: theme.textSecondary }}>
-                        Purchase Date
-                        <input
-                            type="date"
-                            value={vehicleForm.purchaseDate}
-                            onChange={e => setVehicleForm({ ...vehicleForm, purchaseDate: e.target.value })}
-                            required
-                            style={{ ...styles.input, background: theme.bgInput, borderColor: theme.borderInput, color: theme.textPrimary }}
-                        />
-                    </label>
-                    {vehicleError && <p style={styles.errorText}>{vehicleError}</p>}
-                    <div style={styles.modalActions}>
-                        <button type="button" onClick={closeVehicleModal} style={styles.secondaryButton}>Cancel</button>
-                        <button type="submit" disabled={addingVehicle} style={styles.primaryButton}>
-                            {addingVehicle ? 'Adding...' : '+ Add Vehicle'}
-                        </button>
-                    </div>
-                </form>
-            </div>
+  useEffect(() => {
+    if (!userId) return;
+    api.get('/dashboard/fleet')
+      .then(res => setFleetData(res.data))
+      .catch(() => {});
+  }, [userId]);
+
+  useEffect(() => {
+    const fetchDashboardData = async () => {
+      if (!selectedVehicle) return;
+      setLoading(true);
+      try {
+        const res = await api.get(`/dashboard/${selectedVehicle}`);
+        setDashboardData(res.data);
+      } catch (err) {
+        console.error(err);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchDashboardData();
+  }, [selectedVehicle]);
+
+  const showToast = (type, text) => {
+    setToast({ type, text });
+    setTimeout(() => setToast(null), 4000);
+  };
+
+  const handleDownloadReport = async () => {
+    if (!selectedVehicle) return;
+    setDownloadingPdf(true);
+    try {
+      const res = await api.get(`/reports/vehicle/${selectedVehicle}`, { responseType: 'blob' });
+      const vehicle = vehicles.find(v => String(v.id) === String(selectedVehicle));
+      const url = window.URL.createObjectURL(new Blob([res.data], { type: 'application/pdf' }));
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = `${vehicle?.vehicleName || 'vehicle'}-report.pdf`;
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      window.URL.revokeObjectURL(url);
+      showToast('success', 'PDF report downloaded.');
+    } catch (err) {
+      console.error(err);
+      showToast('error', 'Could not generate the PDF report.');
+    } finally {
+      setDownloadingPdf(false);
+    }
+  };
+
+  const handleSendDigest = async () => {
+    setSendingDigest(true);
+    try {
+      await api.post('/digest/send');
+      showToast('success', 'Monthly digest sent to your email.');
+    } catch (err) {
+      console.error(err);
+      const msg = typeof err.response?.data === 'string' ? err.response.data : 'Could not send the digest email.';
+      showToast('error', msg);
+    } finally {
+      setSendingDigest(false);
+    }
+  };
+
+  const chartData = dashboardData?.monthlyExpenses
+    ? Object.entries(dashboardData.monthlyExpenses)
+        .sort(([a], [b]) => a.localeCompare(b))
+        .map(([month, cost]) => ({ month, cost }))
+    : [];
+
+  const resetVehicleForm = () => {
+    setVehicleForm({ vehicleName: '', vehicleNumber: '', vehicleType: '', purchaseDate: '' });
+    setVehicleError('');
+  };
+
+  const closeVehicleModal = () => {
+    setShowVehicleModal(false);
+    resetVehicleForm();
+  };
+
+  const handleAddVehicle = async (e) => {
+    e.preventDefault();
+    setAddingVehicle(true);
+    setVehicleError('');
+    try {
+      const res = await api.post('/vehicles', { ...vehicleForm, userId });
+      setVehicles(prev => [...prev, res.data]);
+      setSelectedVehicle(res.data.id);
+      closeVehicleModal();
+    } catch (err) {
+      console.error(err);
+      const message = err.response?.data || err.message || 'Please check the details and try again.';
+      setVehicleError(`Could not add vehicle. ${message}`);
+    } finally {
+      setAddingVehicle(false);
+    }
+  };
+
+  const renderVehicleModal = () => (
+    <div className="modal-overlay" role="presentation" onClick={closeVehicleModal}>
+      <div className="modal-card" role="dialog" aria-modal="true" aria-labelledby="add-vehicle-title" onClick={(e) => e.stopPropagation()}>
+        <div className="modal-head">
+          <h2 id="add-vehicle-title" className="modal-title">Add Vehicle</h2>
+          <button type="button" onClick={closeVehicleModal} className="modal-close" aria-label="Close">×</button>
         </div>
-    );
+        <form onSubmit={handleAddVehicle} style={styles.modalForm}>
+          <div className="field">
+            <label className="field-label">Vehicle Name</label>
+            <input
+              className="input"
+              type="text"
+              value={vehicleForm.vehicleName}
+              onChange={e => setVehicleForm({ ...vehicleForm, vehicleName: e.target.value })}
+              placeholder="Honda City"
+              required
+            />
+          </div>
+          <div className="field">
+            <label className="field-label">Vehicle Number</label>
+            <input
+              className="input"
+              type="text"
+              value={vehicleForm.vehicleNumber}
+              onChange={e => setVehicleForm({ ...vehicleForm, vehicleNumber: e.target.value })}
+              placeholder="MH 12 AB 1234"
+              required
+            />
+          </div>
+          <div className="field">
+            <label className="field-label">Vehicle Type</label>
+            <select
+              className="input"
+              value={vehicleForm.vehicleType}
+              onChange={e => setVehicleForm({ ...vehicleForm, vehicleType: e.target.value })}
+              required
+            >
+              <option value="">Select type</option>
+              {VEHICLE_TYPES.map(t => <option key={t} value={t}>{t}</option>)}
+            </select>
+          </div>
+          <div className="field">
+            <label className="field-label">Purchase Date</label>
+            <input
+              className="input"
+              type="date"
+              value={vehicleForm.purchaseDate}
+              onChange={e => setVehicleForm({ ...vehicleForm, purchaseDate: e.target.value })}
+              required
+            />
+          </div>
+          {vehicleError && <div className="alert alert-error">{vehicleError}</div>}
+          <div style={styles.modalActions}>
+            <button type="button" className="btn btn-ghost" onClick={closeVehicleModal}>Cancel</button>
+            <button type="submit" className="btn btn-primary" disabled={addingVehicle}>
+              {addingVehicle ? 'Adding...' : '+ Add Vehicle'}
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  );
 
-    if (loading && vehicles.length === 0) {
-        return (
-            <div style={{ ...styles.dashboardContainer }}>
-                <div style={styles.header}>
-                    <Skeleton width="260px" height="38px" borderRadius="12px" />
-                    <Skeleton width="140px" height="44px" borderRadius="24px" />
-                </div>
-                <div style={{ background: '#fff', borderRadius: '22px', border: '1px solid #f1f3f5', padding: '28px', marginBottom: '8px' }}>
-                    <Skeleton width="160px" height="22px" style={{ marginBottom: '20px' }} />
-                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(180px,1fr))', gap: '14px', marginBottom: '20px' }}>
-                        {[1,2,3,4].map(i => <div key={i} style={{ borderRadius: '14px', padding: '18px', border: '1px solid #f1f5f9' }}><Skeleton width="70%" height="12px" /><Skeleton width="50%" height="28px" style={{ marginTop: '10px' }} /></div>)}
-                    </div>
-                    <Skeleton width="140px" height="14px" style={{ marginBottom: '12px' }} />
-                    {[1,2].map(i => <div key={i} style={{ display: 'grid', gridTemplateColumns: '180px 1fr 110px', gap: '12px', marginBottom: '10px', alignItems: 'center' }}><Skeleton height="14px" /><Skeleton height="10px" /><Skeleton height="14px" /></div>)}
-                </div>
-                <Skeleton width="280px" height="52px" borderRadius="16px" />
-                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(300px,1fr))', gap: '25px', marginTop: '20px', marginBottom: '40px' }}>
-                    {[1,2,3].map(i => <div key={i} style={{ background: '#fff', padding: '30px 25px', borderRadius: '20px', border: '1px solid #f1f3f5' }}><Skeleton width="60%" height="14px" /><Skeleton width="45%" height="40px" style={{ marginTop: '12px' }} /></div>)}
-                </div>
-                <div style={{ background: '#fff', padding: '35px', borderRadius: '24px', border: '1px solid #f1f3f5' }}>
-                    <Skeleton width="200px" height="20px" style={{ marginBottom: '30px' }} />
-                    <Skeleton width="100%" height="280px" borderRadius="12px" />
-                </div>
-            </div>
-        );
-    }
-
-    if (vehicles.length === 0) {
-        return (
-            <div style={styles.emptyStateContainer}>
-                <h1 style={styles.gradientText}>Welcome to WheelSync! 🛞</h1>
-                <p style={styles.subText}>You currently have zero vehicles registered in your garage.</p>
-                <div style={styles.emptyCard}>
-                    <h2 style={{color: '#2d3436'}}>Get Started</h2>
-                    <p style={{color: '#636e72'}}>Add your first vehicle to unlock real-time expense tracking, maintenance alerts, and analytics.</p>
-                    <button type="button" onClick={() => setShowVehicleModal(true)} style={styles.primaryButton}>
-                        + Add Vehicle
-                    </button>
-                </div>
-                {showVehicleModal && renderVehicleModal()}
-                <VehicleIssueChatbot />
-            </div>
-        );
-    }
-
+  if (loading && vehicles.length === 0) {
     return (
-        <div style={styles.dashboardContainer}>
-            <div style={styles.header}>
-                <h1 style={styles.gradientText}>Vehicle Analytics Dashboard</h1>
-                <button 
-                    type="button" 
-                    onClick={() => setShowVehicleModal(true)} 
-                    style={styles.addVehicleButton}
-                >
-                    + Add Vehicle
-                </button>
-            </div>
-
-            {fleetData && (
-                <div style={fleetStyles.section}>
-                    <h2 style={fleetStyles.heading}>Fleet Overview</h2>
-                    <div style={fleetStyles.statsRow}>
-                        <div style={fleetStyles.card}>
-                            <div style={fleetStyles.cardLabel}>Total Fleet Expense</div>
-                            <div style={fleetStyles.cardValue}>{formatRupees(fleetData.totalFleetExpense)}</div>
-                        </div>
-                        <div style={fleetStyles.card}>
-                            <div style={fleetStyles.cardLabel}>Fuel Spend</div>
-                            <div style={fleetStyles.cardValue}>{formatRupees(fleetData.totalFuelCost)}</div>
-                        </div>
-                        <div style={fleetStyles.card}>
-                            <div style={fleetStyles.cardLabel}>Maintenance Spend</div>
-                            <div style={fleetStyles.cardValue}>{formatRupees(fleetData.totalMaintenanceCost)}</div>
-                        </div>
-                        <div style={fleetStyles.card}>
-                            <div style={fleetStyles.cardLabel}>Vehicles</div>
-                            <div style={fleetStyles.cardValue}>{fleetData.totalVehicles}</div>
-                        </div>
-                    </div>
-
-                    {fleetData.vehicleExpenses && fleetData.vehicleExpenses.length > 0 && (
-                        <div style={fleetStyles.breakdown}>
-                            <div style={fleetStyles.breakdownTitle}>Expense by Vehicle</div>
-                            {fleetData.vehicleExpenses.map((v, i) => {
-                                const pct = fleetData.totalFleetExpense > 0
-                                    ? (v.totalExpense / fleetData.totalFleetExpense) * 100
-                                    : 0;
-                                return (
-                                    <div key={v.vehicleId} style={fleetStyles.barRow}>
-                                        <div style={fleetStyles.barLabel}>
-                                            <span style={fleetStyles.barName}>{v.vehicleName}</span>
-                                            <span style={fleetStyles.barNum}>{v.vehicleNumber}</span>
-                                        </div>
-                                        <div style={fleetStyles.barTrack}>
-                                            <div style={{ ...fleetStyles.barFill, width: `${pct.toFixed(1)}%`, opacity: 1 - i * 0.15 }} />
-                                        </div>
-                                        <div style={fleetStyles.barAmt}>{formatRupees(v.totalExpense)}</div>
-                                    </div>
-                                );
-                            })}
-                        </div>
-                    )}
-
-                    {fleetData.upcomingAlerts && fleetData.upcomingAlerts.length > 0 && (
-                        <div style={fleetStyles.alerts}>
-                            <div style={fleetStyles.alertsTitle}>Upcoming Alerts</div>
-                            {fleetData.upcomingAlerts.map((msg, i) => (
-                                <div key={i} style={fleetStyles.alertItem}>⚠ {msg}</div>
-                            ))}
-                        </div>
-                    )}
-                </div>
-            )}
-
-            <div style={styles.selectorWrapper}>
-                <label style={styles.label}>Select Vehicle:</label>
-                <div style={styles.selectBoxContainer}>
-                    <select 
-                        style={styles.selectBox} 
-                        value={selectedVehicle} 
-                        onChange={(e) => setSelectedVehicle(e.target.value)}
-                    >
-                        {vehicles.map(v => (
-                            <option key={v.id} value={v.id}>
-                                {v.vehicleName} - {v.vehicleNumber}
-                            </option>
-                        ))}
-                    </select>
-                </div>
-            </div>
-
-            {loading ? (
-                <div style={styles.content}>
-                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(300px,1fr))', gap: '25px', marginBottom: '40px' }}>
-                        {[1,2,3].map(i => <div key={i} style={{ background: '#fff', padding: '30px 25px', borderRadius: '20px', border: '1px solid #f1f3f5' }}><Skeleton width="60%" height="14px" /><Skeleton width="45%" height="40px" style={{ marginTop: '12px' }} /></div>)}
-                    </div>
-                    <div style={{ background: '#fff', padding: '35px', borderRadius: '24px', border: '1px solid #f1f3f5' }}>
-                        <Skeleton width="200px" height="20px" style={{ marginBottom: '30px' }} />
-                        <Skeleton width="100%" height="280px" borderRadius="12px" />
-                    </div>
-                </div>
-            ) : dashboardData ? (
-                <div style={styles.content}>
-                    <div style={styles.statsGrid}>
-                        <div style={{...styles.statCard, borderTop: '4px solid #14b8a6', background: theme.bgCard }}>
-                            <h3 style={{ ...styles.cardTitle, color: theme.textSecondary }}>Total Expense</h3>
-                            <p style={{ ...styles.cardValue, color: theme.textPrimary }}>{formatRupees(dashboardData.totalExpense)}</p>
-                        </div>
-                        <div style={{...styles.statCard, borderTop: '4px solid #0f766e', background: theme.bgCard }}>
-                            <h3 style={{ ...styles.cardTitle, color: theme.textSecondary }}>Vehicle Mileage</h3>
-                            <p style={{ ...styles.cardValue, color: theme.textPrimary }}>{dashboardData.mileage || 0} <span style={styles.unit}>km/l</span></p>
-                        </div>
-                        <div style={{...styles.statCard, borderTop: '4px solid #14b8a6', background: theme.bgCard }}>
-                            <h3 style={{ ...styles.cardTitle, color: theme.textSecondary }}>Cost per Km</h3>
-                            <p style={{ ...styles.cardValue, color: theme.textPrimary }}>{formatRupees(dashboardData.costPerKm)}</p>
-                        </div>
-                    </div>
-
-                    <div style={{ ...styles.chartSection, background: theme.bgCard }}>
-                        <h3 style={{ ...styles.chartTitle, color: theme.textPrimary }}>Monthly Expense Overview</h3>
-                        {chartData.length > 0 ? (
-                            <div style={{ width: '100%', height: 350 }}>
-                                <ResponsiveContainer>
-                                    <BarChart data={chartData} margin={{ top: 20, right: 30, left: 0, bottom: 0 }}>
-                                        <CartesianGrid strokeDasharray="3 3" stroke="#eee" vertical={false} />
-                                        <XAxis dataKey="month" stroke="#888" tick={{fill: '#636e72', fontWeight: 600}} />
-                                        <YAxis stroke="#888" tick={{fill: '#636e72', fontWeight: 600}} />
-                                        <Tooltip 
-                                            contentStyle={{ backgroundColor: '#fff', borderColor: '#e1e5eb', borderRadius: '12px', boxShadow: '0 4px 15px rgba(0,0,0,0.1)' }}
-                                            itemStyle={{ color: '#0f766e', fontWeight: 'bold' }}
-                                            formatter={(value) => [formatRupees(value), 'Expense']}
-                                        />
-                                        <Bar dataKey="cost" fill="url(#colorCost)" radius={[6, 6, 0, 0]} />
-                                        <defs>
-                                            <linearGradient id="colorCost" x1="0" y1="0" x2="0" y2="1">
-                                                <stop offset="5%" stopColor="#14b8a6" stopOpacity={0.95}/>
-                                                <stop offset="95%" stopColor="#0f766e" stopOpacity={0.85}/>
-                                            </linearGradient>
-                                        </defs>
-                                    </BarChart>
-                                </ResponsiveContainer>
-                            </div>
-                        ) : (
-                            <div style={styles.noData}>
-                                <div style={{fontSize: '40px', marginBottom: '10px'}}>📊</div>
-                                No expense logs yet. Add fuel or maintenance records to see analytics!
-                            </div>
-                        )}
-                    </div>
-                </div>
-            ) : (
-                <div style={styles.centerText}><h4>No data found for this vehicle.</h4></div>
-            )}
-
-            {showVehicleModal && renderVehicleModal()}
-            <VehicleIssueChatbot />
+      <div className="page-shell" style={styles.page}>
+        <div className="row-between">
+          <Skeleton width="280px" height="40px" borderRadius="12px" />
+          <Skeleton width="150px" height="46px" borderRadius="14px" />
         </div>
+        <div className="grid-stats">
+          {[1, 2, 3, 4].map(i => (
+            <div key={i} className="glass-card" style={{ padding: '22px' }}>
+              <Skeleton width="60%" height="12px" />
+              <Skeleton width="45%" height="32px" style={{ marginTop: '12px' }} />
+            </div>
+          ))}
+        </div>
+        <div className="glass-card">
+          <Skeleton width="200px" height="20px" style={{ marginBottom: '24px' }} />
+          <Skeleton width="100%" height="280px" borderRadius="14px" />
+        </div>
+      </div>
     );
+  }
+
+  if (vehicles.length === 0) {
+    return (
+      <div className="page-shell" style={{ textAlign: 'center', paddingTop: '60px' }}>
+        <h1 className="page-title anim-up" style={{ fontSize: '40px' }}>Welcome to WheelSync</h1>
+        <p className="page-sub anim-up d1" style={{ fontSize: '17px' }}>Your garage is empty — add your first vehicle to begin.</p>
+        <div className="glass-card anim-up d2" style={styles.emptyCard}>
+          <span style={{ fontSize: '52px', display: 'block', animation: 'float-y 3.5s ease-in-out infinite' }}>⬡</span>
+          <h2 style={{ margin: '14px 0 8px' }}>Get Started</h2>
+          <p style={{ color: 'var(--text-2)', margin: '0 0 22px' }}>
+            Add a vehicle to unlock expense tracking, fuel efficiency analytics, maintenance alerts, and PDF reports.
+          </p>
+          <button type="button" className="btn btn-primary btn-lg" onClick={() => setShowVehicleModal(true)}>
+            + Add Your First Vehicle
+          </button>
+        </div>
+        {showVehicleModal && renderVehicleModal()}
+        <VehicleIssueChatbot />
+      </div>
+    );
+  }
+
+  return (
+    <div className="page-shell" style={styles.page}>
+      {toast && (
+        <div className={`alert ${toast.type === 'success' ? 'alert-success' : 'alert-error'}`} style={styles.toast}>
+          {toast.text}
+        </div>
+      )}
+
+      <div className="row-between anim-up">
+        <div>
+          <p className="eyebrow">Fleet Command</p>
+          <h1 className="page-title">Dashboard</h1>
+        </div>
+        <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap' }}>
+          <button type="button" className="btn btn-ghost" onClick={handleSendDigest} disabled={sendingDigest}>
+            {sendingDigest ? 'Sending...' : '✉ Email My Digest'}
+          </button>
+          <button type="button" className="btn btn-primary" onClick={() => setShowVehicleModal(true)}>
+            + Add Vehicle
+          </button>
+        </div>
+      </div>
+
+      {fleetData && (
+        <>
+          <div className="grid-stats">
+            <div className="glass-card stat-card hoverable anim-up d1">
+              <span className="stat-label">Fleet Total Cost</span>
+              <span className="stat-value">{formatRupees(fleetData.totalFleetExpense)}</span>
+            </div>
+            <div className="glass-card stat-card hoverable anim-up d2">
+              <span className="stat-label">Fuel Spend</span>
+              <span className="stat-value">{formatRupees(fleetData.totalFuelCost)}</span>
+            </div>
+            <div className="glass-card stat-card hoverable anim-up d3">
+              <span className="stat-label">Maintenance Spend</span>
+              <span className="stat-value">{formatRupees(fleetData.totalMaintenanceCost)}</span>
+            </div>
+            <div className="glass-card stat-card hoverable anim-up d4">
+              <span className="stat-label">Vehicles</span>
+              <span className="stat-value">{fleetData.totalVehicles}</span>
+            </div>
+          </div>
+
+          {fleetData.upcomingAlerts && fleetData.upcomingAlerts.length > 0 && (
+            <div className="glass-card anim-up d2" style={styles.alertsCard}>
+              <p className="eyebrow" style={{ color: 'var(--warning)' }}>Upcoming Alerts</p>
+              <div style={{ display: 'grid', gap: '8px' }}>
+                {fleetData.upcomingAlerts.map((msg, i) => (
+                  <div key={i} className="alert alert-warn">⚠ {msg}</div>
+                ))}
+              </div>
+            </div>
+          )}
+        </>
+      )}
+
+      <div className="glass-card anim-up d2" style={styles.selectorCard}>
+        <div className="row-between">
+          <div style={{ display: 'flex', alignItems: 'center', gap: '14px', flexWrap: 'wrap' }}>
+            <label className="field-label" style={{ margin: 0 }}>Vehicle</label>
+            <select
+              className="input"
+              style={{ width: 'auto', minWidth: '230px' }}
+              value={selectedVehicle}
+              onChange={(e) => setSelectedVehicle(e.target.value)}
+            >
+              {vehicles.map(v => (
+                <option key={v.id} value={v.id}>{v.vehicleName} — {v.vehicleNumber}</option>
+              ))}
+            </select>
+          </div>
+          <button type="button" className="btn btn-ghost" onClick={handleDownloadReport} disabled={downloadingPdf}>
+            {downloadingPdf ? 'Generating...' : '⬇ Download PDF Report'}
+          </button>
+        </div>
+      </div>
+
+      {loading ? (
+        <div className="grid-stats">
+          {[1, 2, 3, 4].map(i => (
+            <div key={i} className="glass-card" style={{ padding: '22px' }}>
+              <Skeleton width="60%" height="12px" />
+              <Skeleton width="45%" height="32px" style={{ marginTop: '12px' }} />
+            </div>
+          ))}
+        </div>
+      ) : dashboardData ? (
+        <>
+          <div className="grid-stats">
+            <div className="glass-card stat-card hoverable anim-up d1">
+              <span className="stat-label">Total Cost of Ownership</span>
+              <span className="stat-value">{formatRupees(dashboardData.totalExpense)}</span>
+              <span style={styles.statHint}>fuel + maintenance, lifetime</span>
+            </div>
+            <div className="glass-card stat-card hoverable anim-up d2">
+              <span className="stat-label">Fuel Efficiency</span>
+              <span className="stat-value">
+                {dashboardData.mileage || 0}<span className="stat-unit">km/L</span>
+              </span>
+              <span style={styles.statHint}>from logged refuels</span>
+            </div>
+            <div className="glass-card stat-card hoverable anim-up d3">
+              <span className="stat-label">Cost per KM</span>
+              <span className="stat-value">{formatRupees(dashboardData.costPerKm)}</span>
+              <span style={styles.statHint}>all running costs / km</span>
+            </div>
+          </div>
+
+          <div className="glass-card anim-up d3">
+            <h3 style={styles.sectionTitle}>Monthly Expense Trend</h3>
+            {chartData.length > 0 ? (
+              <div style={{ width: '100%', height: 330 }}>
+                <ResponsiveContainer>
+                  <BarChart data={chartData} margin={{ top: 16, right: 16, left: 0, bottom: 0 }}>
+                    <CartesianGrid strokeDasharray="3 3" stroke="var(--chart-grid)" vertical={false} />
+                    <XAxis dataKey="month" stroke="var(--text-3)" tick={{ fill: 'var(--text-2)', fontWeight: 600, fontSize: 12 }} />
+                    <YAxis stroke="var(--text-3)" tick={{ fill: 'var(--text-2)', fontWeight: 600, fontSize: 12 }} />
+                    <Tooltip
+                      cursor={{ fill: 'rgba(148, 163, 184, 0.08)' }}
+                      contentStyle={{
+                        background: 'var(--glass-strong)',
+                        border: '1px solid var(--glass-border)',
+                        borderRadius: '14px',
+                        backdropFilter: 'blur(16px)',
+                        color: 'var(--text-1)',
+                      }}
+                      labelStyle={{ color: 'var(--text-2)', fontWeight: 700 }}
+                      itemStyle={{ color: 'var(--accent-1)', fontWeight: 700 }}
+                      formatter={(value) => [formatRupees(value), 'Expense']}
+                    />
+                    <Bar dataKey="cost" fill="url(#vemBarGrad)" radius={[8, 8, 0, 0]} maxBarSize={56} />
+                    <defs>
+                      <linearGradient id="vemBarGrad" x1="0" y1="0" x2="0" y2="1">
+                        <stop offset="0%" stopColor="#22d3ee" stopOpacity={0.95} />
+                        <stop offset="100%" stopColor="#8b5cf6" stopOpacity={0.75} />
+                      </linearGradient>
+                    </defs>
+                  </BarChart>
+                </ResponsiveContainer>
+              </div>
+            ) : (
+              <div className="empty-state">
+                <span className="icon">📊</span>
+                No expense logs yet — add fuel or maintenance records to see analytics.
+              </div>
+            )}
+          </div>
+        </>
+      ) : (
+        <div className="empty-state">
+          <span className="icon">🔍</span>
+          No data found for this vehicle.
+        </div>
+      )}
+
+      {fleetData?.vehicleExpenses && fleetData.vehicleExpenses.length > 0 && (
+        <div className="glass-card anim-up d4">
+          <h3 style={styles.sectionTitle}>Cost of Ownership by Vehicle</h3>
+          <div style={{ display: 'grid', gap: '14px' }}>
+            {fleetData.vehicleExpenses.map((v, i) => {
+              const pct = fleetData.totalFleetExpense > 0
+                ? (v.totalExpense / fleetData.totalFleetExpense) * 100
+                : 0;
+              return (
+                <div key={v.vehicleId} style={styles.barRow}>
+                  <div style={styles.barLabel}>
+                    <span style={styles.barName}>{v.vehicleName}</span>
+                    <span style={styles.barNum}>{v.vehicleNumber}</span>
+                  </div>
+                  <div style={styles.barTrack}>
+                    <div
+                      style={{
+                        ...styles.barFill,
+                        width: `${pct.toFixed(1)}%`,
+                        opacity: Math.max(0.45, 1 - i * 0.12),
+                      }}
+                    />
+                  </div>
+                  <div style={styles.barMeta}>
+                    <span style={styles.barAmt}>{formatRupees(v.totalExpense)}</span>
+                    {(v.kmPerL > 0 || v.costPerKm > 0) && (
+                      <span style={styles.barChips}>
+                        {v.kmPerL > 0 && <span className="chip">{v.kmPerL} km/L</span>}
+                        {v.costPerKm > 0 && <span className="chip">{formatRupees(v.costPerKm)}/km</span>}
+                      </span>
+                    )}
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      )}
+
+      {showVehicleModal && renderVehicleModal()}
+      <VehicleIssueChatbot />
+    </div>
+  );
 };
 
 const styles = {
-    dashboardContainer: {
-        maxWidth: '1100px',
-        margin: '0 auto',
-        padding: '10px 40px 40px',
-    },
-    header: {
-        display: 'flex',
-        justifyContent: 'space-between',
-        alignItems: 'center',
-        marginBottom: '20px',
-        flexWrap: 'wrap',
-        gap: '20px',
-    },
-    gradientText: {
-        margin: 0,
-        fontSize: '32px',
-        fontWeight: '800',
-        background: NAV_GRADIENT,
-        WebkitBackgroundClip: 'text',
-        WebkitTextFillColor: 'transparent',
-    },
-    addVehicleButton: {
-        padding: '12px 24px',
-        background: NAV_ACTIVE_GRADIENT,
-        color: '#fff',
-        border: 'none',
-        borderRadius: '24px',
-        fontWeight: '700',
-        fontSize: '15px',
-        cursor: 'pointer',
-        transition: 'transform 0.2s ease, box-shadow 0.2s ease',
-        boxShadow: '0 8px 20px rgba(13, 148, 136, 0.3)',
-    },
-    selectorWrapper: {
-        display: 'flex',
-        alignItems: 'center',
-        background: '#fff',
-        padding: '10px 20px',
-        borderRadius: '16px',
-        boxShadow: '0 4px 15px rgba(0,0,0,0.05)',
-        border: '1px solid #edf2f7',
-        marginBottom: '40px',
-        width: 'fit-content',
-    },
-    label: {
-        marginRight: '12px',
-        fontWeight: 'bold',
-        color: '#636e72',
-    },
-    selectBoxContainer: {
-        position: 'relative',
-    },
-    selectBox: {
-        padding: '10px 15px',
-        borderRadius: '10px',
-        border: '1px solid #dfe6e9',
-        background: '#f8f9fa',
-        color: '#2d3436',
-        fontSize: '15px',
-        outline: 'none',
-        cursor: 'pointer',
-        fontWeight: '600',
-        appearance: 'none',
-        minWidth: '220px',
-    },
-    statsGrid: {
-        display: 'grid',
-        gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))',
-        gap: '25px',
-        marginBottom: '40px',
-    },
-    statCard: {
-        background: '#fff',
-        padding: '30px 25px',
-        borderRadius: '20px',
-        textAlign: 'center',
-        boxShadow: '0 10px 30px rgba(0,0,0,0.06)',
-        transition: 'transform 0.2s ease, box-shadow 0.2s ease',
-        border: '1px solid #f1f3f5',
-    },
-    cardTitle: {
-        margin: '0 0 10px 0',
-        fontSize: '15px',
-        color: '#636e72',
-        textTransform: 'uppercase',
-        letterSpacing: '1.2px',
-        fontWeight: '700',
-    },
-    cardValue: {
-        margin: 0,
-        fontSize: '40px',
-        fontWeight: '800',
-        color: '#2d3436',
-    },
-    unit: {
-        fontSize: '16px',
-        color: '#a0aec0',
-        fontWeight: '600',
-    },
-    chartSection: {
-        background: '#fff',
-        padding: '35px',
-        borderRadius: '24px',
-        boxShadow: '0 10px 30px rgba(0,0,0,0.06)',
-        border: '1px solid #f1f3f5',
-    },
-    chartTitle: {
-        margin: '0 0 30px 0',
-        color: '#2d3436',
-        fontSize: '20px',
-        fontWeight: '700',
-    },
-    emptyStateContainer: {
-        textAlign: 'center',
-        padding: '80px 20px',
-    },
-    subText: {
-        fontSize: '18px',
-        color: '#636e72',
-        marginTop: '15px',
-        fontWeight: '500',
-    },
-    emptyCard: {
-        background: '#fff',
-        maxWidth: '500px',
-        margin: '40px auto',
-        padding: '50px 40px',
-        borderRadius: '24px',
-        boxShadow: '0 15px 35px rgba(0,0,0,0.08)',
-        border: '1px solid #f8f9fa',
-    },
-    primaryButton: {
-        display: 'inline-block',
-        marginTop: '30px',
-        padding: '16px 36px',
-        background: NAV_ACTIVE_GRADIENT,
-        color: '#fff',
-        textDecoration: 'none',
-        fontWeight: '700',
-        borderRadius: '30px',
-        fontSize: '16px',
-        border: 'none',
-        cursor: 'pointer',
-        transition: 'transform 0.2s ease, box-shadow 0.2s ease',
-        boxShadow: '0 8px 20px rgba(13, 148, 136, 0.3)',
-    },
-    secondaryButton: {
-        padding: '14px 24px',
-        background: '#f1f5f9',
-        color: '#475569',
-        border: '1px solid #e2e8f0',
-        borderRadius: '24px',
-        cursor: 'pointer',
-        fontWeight: '700',
-        fontSize: '15px',
-    },
-    modalOverlay: {
-        position: 'fixed',
-        inset: 0,
-        background: 'rgba(15, 23, 42, 0.36)',
-        backdropFilter: 'blur(8px)',
-        WebkitBackdropFilter: 'blur(8px)',
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        padding: '24px',
-        zIndex: 2000,
-    },
-    modal: {
-        width: '100%',
-        maxWidth: '520px',
-        background: 'rgba(255, 255, 255, 0.92)',
-        borderRadius: '22px',
-        border: '1px solid rgba(255, 255, 255, 0.78)',
-        boxShadow: '0 30px 70px rgba(15, 23, 42, 0.22)',
-        padding: '28px',
-        textAlign: 'left',
-    },
-    modalHeader: {
-        display: 'flex',
-        justifyContent: 'space-between',
-        alignItems: 'center',
-        gap: '16px',
-        marginBottom: '24px',
-    },
-    modalTitle: {
-        margin: 0,
-        fontSize: '24px',
-        fontWeight: '800',
-        color: '#1f2937',
-    },
-    closeButton: {
-        width: '36px',
-        height: '36px',
-        borderRadius: '50%',
-        border: '1px solid #e2e8f0',
-        background: '#fff',
-        color: '#475569',
-        cursor: 'pointer',
-        fontSize: '20px',
-        fontWeight: '700',
-        lineHeight: 1,
-    },
-    modalForm: {
-        display: 'grid',
-        gap: '16px',
-    },
-    fieldLabel: {
-        display: 'grid',
-        gap: '8px',
-        color: '#475569',
-        fontWeight: '700',
-        fontSize: '14px',
-    },
-    input: {
-        width: '100%',
-        padding: '13px 14px',
-        borderRadius: '12px',
-        border: '1px solid #dbe3ee',
-        background: '#f8fafc',
-        color: '#1f2937',
-        fontSize: '15px',
-        outline: 'none',
-        fontFamily: 'inherit',
-    },
-    modalActions: {
-        display: 'flex',
-        justifyContent: 'flex-end',
-        gap: '12px',
-        flexWrap: 'wrap',
-        marginTop: '8px',
-    },
-    errorText: {
-        margin: 0,
-        color: '#dc3545',
-        fontWeight: '700',
-        fontSize: '14px',
-    },
-    centerText: {
-        textAlign: 'center',
-        padding: '50px',
-        color: '#636e72',
-    },
-    noData: {
-        textAlign: 'center',
-        padding: '80px 20px',
-        color: '#a0aec0',
-        fontWeight: '500',
-        fontSize: '16px',
-        background: '#f8f9fa',
-        borderRadius: '16px',
-        border: '2px dashed #e2e8f0',
-    }
-};
-
-const fleetStyles = {
-    section: {
-        background: '#fff',
-        borderRadius: '22px',
-        border: '1px solid #f1f3f5',
-        boxShadow: '0 10px 30px rgba(0,0,0,0.06)',
-        padding: '28px',
-        marginBottom: '8px',
-    },
-    heading: {
-        margin: '0 0 20px',
-        fontSize: '20px',
-        fontWeight: 700,
-        color: '#0f172a',
-    },
-    statsRow: {
-        display: 'grid',
-        gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))',
-        gap: '14px',
-        marginBottom: '24px',
-    },
-    card: {
-        background: 'linear-gradient(130deg, rgba(236,253,250,0.8), rgba(240,249,255,0.7))',
-        border: '1px solid rgba(153, 246, 228, 0.4)',
-        borderRadius: '14px',
-        padding: '16px 18px',
-    },
-    cardLabel: {
-        fontSize: '12px',
-        fontWeight: 700,
-        color: '#0f766e',
-        textTransform: 'uppercase',
-        letterSpacing: '0.8px',
-        marginBottom: '6px',
-    },
-    cardValue: {
-        fontSize: '22px',
-        fontWeight: 800,
-        color: '#0f172a',
-    },
-    breakdown: {
-        marginBottom: '20px',
-    },
-    breakdownTitle: {
-        fontSize: '14px',
-        fontWeight: 700,
-        color: '#475569',
-        marginBottom: '12px',
-        textTransform: 'uppercase',
-        letterSpacing: '0.6px',
-    },
-    barRow: {
-        display: 'grid',
-        gridTemplateColumns: '180px 1fr 110px',
-        alignItems: 'center',
-        gap: '12px',
-        marginBottom: '10px',
-    },
-    barLabel: {
-        display: 'flex',
-        flexDirection: 'column',
-        gap: '2px',
-        minWidth: 0,
-    },
-    barName: {
-        fontWeight: 700,
-        fontSize: '14px',
-        color: '#1e293b',
-        overflow: 'hidden',
-        textOverflow: 'ellipsis',
-        whiteSpace: 'nowrap',
-    },
-    barNum: {
-        fontSize: '12px',
-        color: '#94a3b8',
-    },
-    barTrack: {
-        height: '10px',
-        background: '#f1f5f9',
-        borderRadius: '999px',
-        overflow: 'hidden',
-    },
-    barFill: {
-        height: '100%',
-        background: 'linear-gradient(90deg, #14b8a6, #0f766e)',
-        borderRadius: '999px',
-        transition: 'width 0.4s ease',
-    },
-    barAmt: {
-        textAlign: 'right',
-        fontWeight: 700,
-        fontSize: '14px',
-        color: '#0f172a',
-    },
-    alerts: {
-        background: 'rgba(254, 243, 199, 0.6)',
-        border: '1px solid rgba(245, 158, 11, 0.3)',
-        borderRadius: '12px',
-        padding: '14px 16px',
-        display: 'grid',
-        gap: '8px',
-    },
-    alertsTitle: {
-        fontSize: '13px',
-        fontWeight: 700,
-        color: '#92400e',
-        textTransform: 'uppercase',
-        letterSpacing: '0.6px',
-    },
-    alertItem: {
-        fontSize: '14px',
-        color: '#78350f',
-        fontWeight: 500,
-    },
+  page: { display: 'grid', gap: '22px' },
+  toast: {
+    position: 'fixed',
+    top: '92px',
+    left: '50%',
+    transform: 'translateX(-50%)',
+    zIndex: 3000,
+    animation: 'slide-down 0.3s ease both',
+    boxShadow: 'var(--shadow-pop)',
+  },
+  emptyCard: { maxWidth: '480px', margin: '36px auto 0', textAlign: 'center' },
+  alertsCard: { display: 'grid', gap: '4px' },
+  selectorCard: { padding: '18px 24px' },
+  sectionTitle: { margin: '0 0 20px', fontSize: '18px', fontWeight: 800 },
+  statHint: { fontSize: '12px', color: 'var(--text-3)', fontWeight: 600 },
+  modalForm: { display: 'grid', gap: '16px' },
+  modalActions: { display: 'flex', justifyContent: 'flex-end', gap: '10px', marginTop: '4px' },
+  barRow: {
+    display: 'grid',
+    gridTemplateColumns: 'minmax(120px, 180px) 1fr minmax(150px, auto)',
+    alignItems: 'center',
+    gap: '14px',
+  },
+  barLabel: { display: 'grid', gap: '2px', minWidth: 0 },
+  barName: {
+    fontWeight: 700,
+    fontSize: '14px',
+    color: 'var(--text-1)',
+    overflow: 'hidden',
+    textOverflow: 'ellipsis',
+    whiteSpace: 'nowrap',
+  },
+  barNum: { fontSize: '12px', color: 'var(--text-3)' },
+  barTrack: {
+    height: '10px',
+    background: 'var(--glass)',
+    border: '1px solid var(--glass-border)',
+    borderRadius: '999px',
+    overflow: 'hidden',
+  },
+  barFill: {
+    height: '100%',
+    background: 'var(--accent-grad)',
+    borderRadius: '999px',
+    animation: 'bar-grow 0.8s cubic-bezier(0.21, 0.8, 0.32, 1) both',
+  },
+  barMeta: { display: 'grid', gap: '4px', justifyItems: 'end' },
+  barAmt: { fontWeight: 800, fontSize: '14px', color: 'var(--text-1)' },
+  barChips: { display: 'flex', gap: '6px', flexWrap: 'wrap', justifyContent: 'flex-end' },
 };
 
 export default Dashboard;

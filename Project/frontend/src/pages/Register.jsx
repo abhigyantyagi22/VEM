@@ -10,9 +10,9 @@ const getStrength = (pw) => {
   if (/[A-Z]/.test(pw)) score++;
   if (/[0-9]/.test(pw)) score++;
   if (/[^A-Za-z0-9]/.test(pw)) score++;
-  if (score <= 2) return { label: 'Weak', color: '#ef4444', pct: '33%' };
-  if (score <= 3) return { label: 'Medium', color: '#f59e0b', pct: '66%' };
-  return { label: 'Strong', color: '#10b981', pct: '100%' };
+  if (score <= 2) return { label: 'Weak', color: 'var(--danger)', pct: '33%' };
+  if (score <= 3) return { label: 'Medium', color: 'var(--warning)', pct: '66%' };
+  return { label: 'Strong', color: 'var(--success)', pct: '100%' };
 };
 
 const Register = () => {
@@ -24,30 +24,28 @@ const Register = () => {
   const [isLoading, setIsLoading] = useState(false);
   const navigate = useNavigate();
 
+  const strength = getStrength(formData.password);
+
   const handleRegister = async (e) => {
     e.preventDefault();
     setError('');
     setIsLoading(true);
 
-    // Basic validation
     if (!formData.name || !formData.email || !formData.password || !formData.phone) {
       setError('All fields are required');
       setIsLoading(false);
       return;
     }
-
     if (!/^\d{10}$/.test(formData.phone)) {
       setError('Phone number must be exactly 10 digits.');
       setIsLoading(false);
       return;
     }
-
     if (formData.password !== confirmPassword) {
       setError('Passwords do not match.');
       setIsLoading(false);
       return;
     }
-
     if (formData.password.length < 6) {
       setError('Password must be at least 6 characters');
       setIsLoading(false);
@@ -58,14 +56,14 @@ const Register = () => {
       await api.post('/auth/register', formData);
       navigate('/login');
     } catch (err) {
-        const status = err?.response?.status;
-        if (status === 400) {
-          setError('Invalid input. Please check the form and try again.');
-        } else if (status >= 500) {
-          setError('Server error. Please try again later.');
-        } else {
-          setError('Registration failed. Please try again.');
-        }
+      const status = err?.response?.status;
+      if (status === 400) {
+        setError('Invalid input. Please check the form and try again.');
+      } else if (status >= 500) {
+        setError('Server error. Please try again later.');
+      } else {
+        setError('Registration failed. Please try again.');
+      }
     } finally {
       setIsLoading(false);
     }
@@ -77,153 +75,115 @@ const Register = () => {
 
   return (
     <div style={styles.container}>
-      <div style={styles.backgroundBlur} />
-      
-      <div style={styles.content}>
-        {/* Register Card */}
-        <div style={styles.card}>
-          {/* Branding Inside Card */}
-          <div style={styles.cardBranding}>
-            <div style={styles.logo}>🛞</div>
-            <h1 style={styles.brandText}>WheelSync</h1>
-          </div>
+      <div style={styles.orbA} aria-hidden="true" />
+      <div style={styles.orbB} aria-hidden="true" />
 
-          <div style={styles.cardHeader}>
-            <h2 style={styles.title}>Create Account</h2>
-            <p style={styles.subtitle}>Join us to track your vehicles</p>
-          </div>
-
-          <form onSubmit={handleRegister} style={styles.form}>
-            {error && <div style={styles.errorBox}>{error}</div>}
-
-            <div style={styles.fieldGroup}>
-              <label style={styles.label}>Full Name</label>
-              <input
-                type="text"
-                placeholder="John Doe"
-                value={formData.name}
-                onChange={(e) => handleChange('name', e.target.value)}
-                style={styles.input}
-              />
-            </div>
-
-            <div style={styles.fieldGroup}>
-              <label style={styles.label}>Email Address</label>
-              <input
-                type="email"
-                placeholder="you@example.com"
-                value={formData.email}
-                onChange={(e) => handleChange('email', e.target.value)}
-                required
-                style={styles.input}
-              />
-            </div>
-
-            <div style={styles.fieldGroup}>
-              <label style={styles.label}>Phone Number</label>
-              <input
-                type="tel"
-                placeholder="9876543210"
-                value={formData.phone}
-                onChange={(e) => {
-                  const digits = e.target.value.replace(/\D/g, '').slice(0, 10);
-                  handleChange('phone', digits);
-                }}
-                required
-                maxLength={10}
-                style={{
-                  ...styles.input,
-                  borderColor: formData.phone && formData.phone.length !== 10
-                    ? 'rgba(239,68,68,0.6)'
-                    : 'rgba(20,184,166,0.4)',
-                }}
-              />
-              {formData.phone.length > 0 && formData.phone.length < 10 && (
-                <p style={{ margin: '3px 0 0', fontSize: '11px', color: '#ef4444', fontWeight: 600 }}>
-                  {10 - formData.phone.length} more digit{10 - formData.phone.length !== 1 ? 's' : ''} needed
-                </p>
-              )}
-              {formData.phone.length === 10 && (
-                <p style={{ margin: '3px 0 0', fontSize: '11px', color: '#10b981', fontWeight: 600 }}>✓ Valid</p>
-              )}
-            </div>
-
-            <div style={styles.fieldGroup}>
-              <label style={styles.label}>Password</label>
-              <div style={styles.passwordWrapper}>
-                <input
-                  type={showPassword ? 'text' : 'password'}
-                  placeholder="••••••••"
-                  value={formData.password}
-                  onChange={(e) => handleChange('password', e.target.value)}
-                  required
-                  style={{ ...styles.input, paddingRight: '44px' }}
-                />
-                <button type="button" onClick={() => setShowPassword(p => !p)} style={styles.eyeBtn} tabIndex={-1}>
-                  {showPassword ? '🙈' : '👁'}
-                </button>
-              </div>
-              {(() => {
-                const s = getStrength(formData.password);
-                if (!s) return <p style={styles.passwordHint}>At least 6 characters</p>;
-                return (
-                  <div>
-                    <div style={{ height: '5px', borderRadius: '999px', background: 'rgba(0,0,0,0.1)', overflow: 'hidden', marginTop: '6px' }}>
-                      <div style={{ height: '100%', width: s.pct, background: s.color, borderRadius: '999px', transition: 'width 0.3s ease, background 0.3s ease' }} />
-                    </div>
-                    <p style={{ margin: '4px 0 0', fontSize: '11px', fontWeight: 700, color: s.color }}>{s.label}</p>
-                  </div>
-                );
-              })()}
-            </div>
-
-            <div style={styles.fieldGroup}>
-              <label style={styles.label}>Confirm Password</label>
-              <div style={styles.passwordWrapper}>
-                <input
-                  type={showConfirm ? 'text' : 'password'}
-                  placeholder="••••••••"
-                  value={confirmPassword}
-                  onChange={(e) => setConfirmPassword(e.target.value)}
-                  required
-                  style={{
-                    ...styles.input,
-                    paddingRight: '44px',
-                    borderColor: confirmPassword && confirmPassword !== formData.password
-                      ? 'rgba(239,68,68,0.6)'
-                      : 'rgba(20,184,166,0.4)',
-                  }}
-                />
-                <button type="button" onClick={() => setShowConfirm(p => !p)} style={styles.eyeBtn} tabIndex={-1}>
-                  {showConfirm ? '🙈' : '👁'}
-                </button>
-              </div>
-              {confirmPassword && confirmPassword !== formData.password && (
-                <p style={{ margin: '3px 0 0', fontSize: '11px', color: '#ef4444', fontWeight: 600 }}>Passwords do not match</p>
-              )}
-              {confirmPassword && confirmPassword === formData.password && (
-                <p style={{ margin: '3px 0 0', fontSize: '11px', color: '#10b981', fontWeight: 600 }}>✓ Passwords match</p>
-              )}
-            </div>
-
-            <button
-              type="submit"
-              disabled={isLoading}
-              style={{...styles.registerButton, opacity: isLoading ? 0.7 : 1}}
-            >
-              {isLoading ? 'Creating Account...' : 'Create Account'}
-            </button>
-          </form>
-
-          <div style={styles.divider} />
-
-          <p style={styles.loginText}>
-            Already have an account?{' '}
-            <Link to="/login" style={styles.loginLink}>
-              Sign in
-            </Link>
-          </p>
+      <div className="anim-pop" style={styles.card}>
+        <div style={styles.branding}>
+          <span style={styles.logo}>⬡</span>
+          <h1 style={styles.brandText}>Wheel<span style={styles.brandAccent}>Sync</span></h1>
         </div>
+
+        <h2 style={styles.title}>Create your account</h2>
+        <p style={styles.subtitle}>Start tracking your vehicles in minutes</p>
+
+        <form onSubmit={handleRegister} style={styles.form}>
+          {error && <div className="alert alert-error">{error}</div>}
+
+          <div className="field">
+            <label className="field-label">Full Name</label>
+            <input
+              className="input"
+              type="text"
+              placeholder="John Doe"
+              value={formData.name}
+              onChange={(e) => handleChange('name', e.target.value)}
+            />
+          </div>
+
+          <div className="field">
+            <label className="field-label">Email Address</label>
+            <input
+              className="input"
+              type="email"
+              placeholder="you@example.com"
+              value={formData.email}
+              onChange={(e) => handleChange('email', e.target.value)}
+              required
+            />
+          </div>
+
+          <div className="field">
+            <label className="field-label">Phone Number</label>
+            <input
+              className="input"
+              type="tel"
+              placeholder="10-digit number"
+              value={formData.phone}
+              maxLength={10}
+              onChange={(e) => handleChange('phone', e.target.value.replace(/\D/g, '').slice(0, 10))}
+              required
+            />
+          </div>
+
+          <div className="field">
+            <label className="field-label">Password</label>
+            <div style={styles.pwWrap}>
+              <input
+                className="input"
+                type={showPassword ? 'text' : 'password'}
+                placeholder="••••••••"
+                value={formData.password}
+                onChange={(e) => handleChange('password', e.target.value)}
+                required
+                style={{ paddingRight: '48px' }}
+              />
+              <button type="button" onClick={() => setShowPassword(p => !p)} style={styles.eyeBtn} tabIndex={-1}>
+                {showPassword ? '🙈' : '👁'}
+              </button>
+            </div>
+            {strength && (
+              <div style={styles.strengthWrap}>
+                <div style={styles.strengthTrack}>
+                  <div style={{ ...styles.strengthFill, width: strength.pct, background: strength.color }} />
+                </div>
+                <span style={{ ...styles.strengthLabel, color: strength.color }}>{strength.label}</span>
+              </div>
+            )}
+          </div>
+
+          <div className="field">
+            <label className="field-label">Confirm Password</label>
+            <div style={styles.pwWrap}>
+              <input
+                className="input"
+                type={showConfirm ? 'text' : 'password'}
+                placeholder="••••••••"
+                value={confirmPassword}
+                onChange={(e) => setConfirmPassword(e.target.value)}
+                required
+                style={{ paddingRight: '48px' }}
+              />
+              <button type="button" onClick={() => setShowConfirm(p => !p)} style={styles.eyeBtn} tabIndex={-1}>
+                {showConfirm ? '🙈' : '👁'}
+              </button>
+            </div>
+            {confirmPassword && confirmPassword !== formData.password && (
+              <p style={styles.matchBad}>Passwords do not match</p>
+            )}
+            {confirmPassword && confirmPassword === formData.password && (
+              <p style={styles.matchGood}>✓ Passwords match</p>
+            )}
+          </div>
+
+          <button type="submit" className="btn btn-primary btn-lg" disabled={isLoading} style={{ width: '100%' }}>
+            {isLoading ? 'Creating account...' : 'Create Account →'}
+          </button>
+        </form>
+
+        <p style={styles.switchText}>
+          Already have an account? <Link to="/login" style={styles.switchLink}>Sign in</Link>
+        </p>
       </div>
     </div>
   );
@@ -231,170 +191,99 @@ const Register = () => {
 
 const styles = {
   container: {
-    height: '100vh',
+    minHeight: '100vh',
     display: 'flex',
     alignItems: 'center',
     justifyContent: 'center',
-    background: 'linear-gradient(135deg, #0f172a 0%, #0f766e 50%, #14b8a6 100%)',
-    padding: '20px',
+    padding: '24px',
     position: 'relative',
     overflow: 'hidden',
   },
-  backgroundBlur: {
-    position: 'fixed',
-    inset: 0,
-    background: 'radial-gradient(circle at 20% 50%, rgba(20, 184, 166, 0.15) 0%, transparent 50%), radial-gradient(circle at 80% 80%, rgba(15, 118, 110, 0.15) 0%, transparent 50%)',
+  orbA: {
+    position: 'absolute',
+    width: '460px',
+    height: '460px',
+    borderRadius: '50%',
+    background: 'radial-gradient(circle, rgba(139,92,246,0.22), transparent 65%)',
+    top: '-130px',
+    right: '-100px',
+    filter: 'blur(20px)',
+    animation: 'float-y 8s ease-in-out infinite',
     pointerEvents: 'none',
   },
-  content: {
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'center',
-    position: 'relative',
-    zIndex: 10,
-  },
-  cardBranding: {
-    display: 'grid',
-    gap: '6px',
-    alignItems: 'center',
-    justifyContent: 'center',
-    textAlign: 'center',
-    marginBottom: '8px',
-  },
-  logo: {
-    fontSize: '20px',
-    color: '#14b8a6',
-    fontWeight: 800,
-    textShadow: '0 0 30px rgba(20, 184, 166, 0.4)',
-    textAlign: 'center',
-  },
-  brandText: {
-    margin: '0',
-    fontSize: '20px',
-    fontWeight: 800,
-    color: '#06b6d4',
-    textAlign: 'center',
+  orbB: {
+    position: 'absolute',
+    width: '520px',
+    height: '520px',
+    borderRadius: '50%',
+    background: 'radial-gradient(circle, rgba(34,211,238,0.18), transparent 65%)',
+    bottom: '-160px',
+    left: '-130px',
+    filter: 'blur(20px)',
+    animation: 'float-y 10s ease-in-out infinite reverse',
+    pointerEvents: 'none',
   },
   card: {
-    background: 'linear-gradient(135deg, rgba(255, 255, 255, 0.13), rgba(255, 255, 255, 0.09))',
-    backdropFilter: 'blur(20px)',
-    WebkitBackdropFilter: 'blur(20px)',
-    border: '1px solid rgba(255, 255, 255, 0.28)',
-    borderRadius: '28px',
-    padding: '16px 80px',
-    maxWidth: '95vw',
     width: '100%',
-    boxShadow: '0 12px 40px rgba(0, 0, 0, 0.2), inset 0 1px 1px rgba(255, 255, 255, 0.3)',
-  },
-  cardHeader: {
-    display: 'grid',
-    gap: '4px',
-    marginBottom: '6px',
-    textAlign: 'center',
-  },
-  title: {
-    margin: 0,
-    fontSize: '22px',
-    fontWeight: 800,
-    color: '#0d5d56',
-  },
-  subtitle: {
-    margin: 0,
-    fontSize: '12px',
-    color: '#0a3d3a',
-    fontWeight: 500,
-  },
-  passwordWrapper: {
+    maxWidth: '450px',
+    maxHeight: 'calc(100vh - 32px)',
+    overflowY: 'auto',
+    background: 'var(--glass-strong)',
+    border: '1px solid var(--glass-border)',
+    borderRadius: '26px',
+    padding: '34px',
+    boxShadow: 'var(--shadow-pop), inset 0 1px 0 var(--glass-highlight)',
+    backdropFilter: 'blur(28px) saturate(160%)',
+    WebkitBackdropFilter: 'blur(28px) saturate(160%)',
     position: 'relative',
-    display: 'flex',
-    alignItems: 'center',
+    zIndex: 1,
   },
+  branding: { display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '10px', marginBottom: '22px' },
+  logo: {
+    fontSize: '30px',
+    background: 'var(--accent-grad)',
+    WebkitBackgroundClip: 'text',
+    backgroundClip: 'text',
+    WebkitTextFillColor: 'transparent',
+    lineHeight: 1,
+  },
+  brandText: { margin: 0, fontSize: '24px', fontWeight: 800, letterSpacing: '-0.4px', color: 'var(--text-1)' },
+  brandAccent: {
+    background: 'var(--accent-grad)',
+    WebkitBackgroundClip: 'text',
+    backgroundClip: 'text',
+    WebkitTextFillColor: 'transparent',
+  },
+  title: { margin: 0, fontSize: '25px', fontWeight: 800, textAlign: 'center', letterSpacing: '-0.4px' },
+  subtitle: { margin: '6px 0 24px', textAlign: 'center', color: 'var(--text-2)', fontSize: '14px' },
+  form: { display: 'grid', gap: '16px' },
+  pwWrap: { position: 'relative' },
   eyeBtn: {
     position: 'absolute',
     right: '12px',
-    background: 'transparent',
+    top: '50%',
+    transform: 'translateY(-50%)',
+    background: 'none',
     border: 'none',
     cursor: 'pointer',
     fontSize: '16px',
-    padding: '0',
-    lineHeight: 1,
-    color: '#0a3d3a',
+    padding: '4px',
+    opacity: 0.7,
   },
-  form: {
-    display: 'grid',
-    gap: '6px',
+  strengthWrap: { display: 'flex', alignItems: 'center', gap: '10px', marginTop: '2px' },
+  strengthTrack: {
+    flex: 1,
+    height: '5px',
+    borderRadius: '999px',
+    background: 'var(--glass-border)',
+    overflow: 'hidden',
   },
-  fieldGroup: {
-    display: 'grid',
-    gap: '2px',
-  },
-  label: {
-    fontSize: '12px',
-    fontWeight: 700,
-    color: '#0a3d3a',
-    textTransform: 'uppercase',
-    letterSpacing: '0.5px',
-  },
-  input: {
-    width: '100%',
-    padding: '9px 16px',
-    borderRadius: '12px',
-    border: '1px solid rgba(20, 184, 166, 0.4)',
-    background: 'rgba(255, 255, 255, 0.88)',
-    fontSize: '15px',
-    fontWeight: 500,
-    transition: 'all 0.3s ease',
-    boxSizing: 'border-box',
-    outline: 'none',
-    color: '#0a3d3a',
-  },
-  passwordHint: {
-    margin: '0',
-    fontSize: '10px',
-    color: '#0a3d3a',
-    fontWeight: 500,
-  },
-  errorBox: {
-    background: 'rgba(239, 68, 68, 0.15)',
-    border: '1px solid rgba(239, 68, 68, 0.4)',
-    borderRadius: '12px',
-    padding: '12px 16px',
-    color: '#b91c1c',
-    fontSize: '13px',
-    fontWeight: 600,
-  },
-  registerButton: {
-    width: '100%',
-    padding: '9px 24px',
-    borderRadius: '12px',
-    border: 'none',
-    background: '#000000',
-    color: '#fff',
-    fontSize: '15px',
-    fontWeight: 700,
-    cursor: 'pointer',
-    transition: 'all 0.3s ease',
-    boxShadow: '0 8px 24px rgba(0, 0, 0, 0.35)',
-    marginTop: '0',
-  },
-  divider: {
-    height: '1px',
-    background: 'linear-gradient(90deg, transparent, rgba(20, 184, 166, 0.4), transparent)',
-    margin: '4px 0',
-  },
-  loginText: {
-    margin: 0,
-    fontSize: '10px',
-    color: '#0a3d3a',
-    fontWeight: 500,
-    textAlign: 'center',
-  },
-  loginLink: {
-    color: '#000000',
-    textDecoration: 'none',
-    fontWeight: 700,
-    transition: 'all 0.3s ease',
-  },
+  strengthFill: { height: '100%', borderRadius: '999px', transition: 'width 0.3s ease, background 0.3s ease' },
+  strengthLabel: { fontSize: '12px', fontWeight: 700 },
+  matchBad: { margin: '4px 0 0', fontSize: '12px', color: 'var(--danger)', fontWeight: 600 },
+  matchGood: { margin: '4px 0 0', fontSize: '12px', color: 'var(--success)', fontWeight: 600 },
+  switchText: { textAlign: 'center', marginTop: '22px', marginBottom: 0, color: 'var(--text-2)', fontSize: '14px' },
+  switchLink: { color: 'var(--accent-1)', fontWeight: 700, textDecoration: 'none' },
 };
 
 export default Register;

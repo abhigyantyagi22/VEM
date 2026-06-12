@@ -1,12 +1,18 @@
 import React, { useEffect, useState } from 'react';
 import { useParams } from 'react-router-dom';
 import api from '../services/api';
-import { useTheme } from '../context/ThemeContext';
 import ConfirmModal from '../components/ConfirmModal';
+
+const expiryChip = (dateStr) => {
+  if (!dateStr) return null;
+  const days = Math.ceil((new Date(dateStr) - new Date()) / 86400000);
+  if (days < 0) return <span className="chip chip-danger">Expired</span>;
+  if (days <= 30) return <span className="chip chip-warn">{days}d left</span>;
+  return <span className="chip chip-success">Valid</span>;
+};
 
 const DocumentsPage = () => {
   const { id } = useParams();
-  const { theme } = useTheme();
   const [doc, setDoc] = useState({ insuranceExpiry: '', pucExpiry: '', registrationExpiry: '' });
   const [confirm, setConfirm] = useState(null);
   const [history, setHistory] = useState([]);
@@ -26,7 +32,6 @@ const DocumentsPage = () => {
         });
       }
     } catch (e) {
-      // When no snapshot exists yet, the API can return 404.
       if (e?.response?.status !== 404) {
         console.error(e);
       }
@@ -74,8 +79,6 @@ const DocumentsPage = () => {
     }
   };
 
-  const formatDate = (value) => (value ? value : 'N/A');
-
   const handleEdit = (entry) => {
     setEditingDocumentId(entry.id);
     setDoc({
@@ -117,228 +120,120 @@ const DocumentsPage = () => {
 
   return (
     <div style={styles.container}>
-      <h2 style={styles.title}>Documents Tracker</h2>
-      <p style={styles.subtitle}>Vehicle ID: {id}</p>
+      <p style={styles.subtitle}>Track insurance, PUC, and registration expiry dates.</p>
 
-      <form onSubmit={handleSubmit} style={{ ...styles.form, background: theme.bgCardGlass, border: `1px solid ${theme.border}` }}>
-        <label style={{ ...styles.label, color: theme.textAccent }}>
-          Insurance Expiry
-          <input
-            type="date"
-            style={{ ...styles.input, background: theme.bgInputAlt, borderColor: theme.borderInputAlt, color: theme.textPrimary }}
-            value={doc.insuranceExpiry}
-            onChange={(e) => setDoc({ ...doc, insuranceExpiry: e.target.value })}
-            required
-          />
-        </label>
+      <form onSubmit={handleSubmit} className="glass-inset" style={styles.formCard}>
+        <div style={styles.formGrid}>
+          <div className="field">
+            <label className="field-label">Insurance Expiry {expiryChip(doc.insuranceExpiry)}</label>
+            <input
+              className="input"
+              type="date"
+              value={doc.insuranceExpiry}
+              onChange={(e) => setDoc({ ...doc, insuranceExpiry: e.target.value })}
+              required
+            />
+          </div>
+          <div className="field">
+            <label className="field-label">PUC Expiry {expiryChip(doc.pucExpiry)}</label>
+            <input
+              className="input"
+              type="date"
+              value={doc.pucExpiry}
+              onChange={(e) => setDoc({ ...doc, pucExpiry: e.target.value })}
+              required
+            />
+          </div>
+          <div className="field">
+            <label className="field-label">Registration Expiry {expiryChip(doc.registrationExpiry)}</label>
+            <input
+              className="input"
+              type="date"
+              value={doc.registrationExpiry}
+              onChange={(e) => setDoc({ ...doc, registrationExpiry: e.target.value })}
+              required
+            />
+          </div>
+        </div>
 
-        <label style={{ ...styles.label, color: theme.textAccent }}>
-          PUC Expiry
-          <input
-            type="date"
-            style={{ ...styles.input, background: theme.bgInputAlt, borderColor: theme.borderInputAlt, color: theme.textPrimary }}
-            value={doc.pucExpiry}
-            onChange={(e) => setDoc({ ...doc, pucExpiry: e.target.value })}
-            required
-          />
-        </label>
-
-        <label style={{ ...styles.label, color: theme.textAccent }}>
-          Registration Expiry
-          <input
-            type="date"
-            style={{ ...styles.input, background: theme.bgInputAlt, borderColor: theme.borderInputAlt, color: theme.textPrimary }}
-            value={doc.registrationExpiry}
-            onChange={(e) => setDoc({ ...doc, registrationExpiry: e.target.value })}
-            required
-          />
-        </label>
-
-        {error && <p style={styles.errorText}>{error}</p>}
-        {successMessage && <p style={styles.successText}>{successMessage}</p>}
+        {error && <div className="alert alert-error">{error}</div>}
+        {successMessage && <div className="alert alert-success">{successMessage}</div>}
 
         <div style={styles.formActions}>
           {editingDocumentId && (
-            <button type="button" style={styles.secondaryButton} onClick={handleCancelEdit}>
-              Cancel Edit
-            </button>
+            <button type="button" className="btn btn-ghost" onClick={handleCancelEdit}>Cancel Edit</button>
           )}
-          <button type="submit" style={styles.saveButton} disabled={saving}>
-            {saving ? 'Saving...' : editingDocumentId ? 'Update Document Details' : 'Save Document Details'}
+          <button type="submit" className="btn btn-primary" disabled={saving}>
+            {saving ? 'Saving...' : editingDocumentId ? 'Update Documents' : 'Save Documents'}
           </button>
         </div>
       </form>
 
-      <h3 style={{ ...styles.sectionTitle, color: theme.textPrimary }}>Saved History</h3>
-      {history.length === 0 ? (
-        <p style={styles.emptyText}>No document history yet. Add your first entry above.</p>
-      ) : (
-        <table border="1" cellPadding="10" width="100%" style={{ ...styles.table, background: theme.bgTable }}>
-          <thead style={{ background: theme.bgTableHead }}>
-            <tr>
-              <th>Version</th>
-              <th>Insurance Expiry</th>
-              <th>PUC Expiry</th>
-              <th>Registration Expiry</th>
-              <th>Action</th>
-            </tr>
-          </thead>
-          <tbody>
-            {history.map((entry, index) => (
-              <tr key={entry.id || `${entry.vehicleId}-${index}`} style={{ background: index % 2 === 0 ? theme.bgTableRowEven : theme.bgTableRowOdd, color: theme.textPrimary }}>
-                <td style={styles.tableCell}>{history.length - index}</td>
-                <td style={styles.tableCell}>{formatDate(entry.insuranceExpiry)}</td>
-                <td style={styles.tableCell}>{formatDate(entry.pucExpiry)}</td>
-                <td style={styles.tableCell}>{formatDate(entry.registrationExpiry)}</td>
-                <td style={styles.tableCell}>
-                  <div style={{ display: 'flex', gap: '8px' }}>
-                    <button type="button" onClick={() => handleEdit(entry)} style={styles.editButton}>
-                      Edit
-                    </button>
-                    <button type="button" onClick={() => handleDelete(entry.id)} style={styles.deleteButton}>
-                      🗑️ Delete
-                    </button>
-                  </div>
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      )}
-    {confirm && <ConfirmModal message={confirm.message} onConfirm={confirm.onConfirm} onCancel={() => setConfirm(null)} />}
+      <div style={styles.section}>
+        <h3 style={styles.sectionTitle}>Document History</h3>
+        {history.length === 0 ? (
+          <div className="empty-state" style={{ padding: '32px 20px' }}>
+            <span className="icon" style={{ fontSize: '32px' }}>📄</span>
+            No document records yet.
+          </div>
+        ) : (
+          <div className="table-wrap">
+            <table className="glass-table">
+              <thead>
+                <tr>
+                  <th>Insurance</th>
+                  <th>PUC</th>
+                  <th>Registration</th>
+                  <th>Actions</th>
+                </tr>
+              </thead>
+              <tbody>
+                {history.map((entry) => (
+                  <tr key={entry.id}>
+                    <td>
+                      <div style={styles.cellStack}>
+                        {entry.insuranceExpiry || 'N/A'} {expiryChip(entry.insuranceExpiry)}
+                      </div>
+                    </td>
+                    <td>
+                      <div style={styles.cellStack}>
+                        {entry.pucExpiry || 'N/A'} {expiryChip(entry.pucExpiry)}
+                      </div>
+                    </td>
+                    <td>
+                      <div style={styles.cellStack}>
+                        {entry.registrationExpiry || 'N/A'} {expiryChip(entry.registrationExpiry)}
+                      </div>
+                    </td>
+                    <td>
+                      <div style={styles.rowActions}>
+                        <button type="button" className="btn btn-ghost btn-sm" onClick={() => handleEdit(entry)}>Edit</button>
+                        <button type="button" className="btn btn-danger btn-sm" onClick={() => handleDelete(entry.id)}>Delete</button>
+                      </div>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
+      </div>
+
+      {confirm && <ConfirmModal message={confirm.message} onConfirm={confirm.onConfirm} onCancel={() => setConfirm(null)} />}
     </div>
   );
 };
 
 const styles = {
-  container: {
-    maxWidth: '980px',
-    margin: '0 auto',
-    display: 'grid',
-    gap: '16px',
-  },
-  title: {
-    margin: 0,
-    fontSize: '34px',
-    fontWeight: 800,
-    background: 'linear-gradient(130deg, #0f172a, #0f766e)',
-    WebkitBackgroundClip: 'text',
-    WebkitTextFillColor: 'transparent',
-  },
-  subtitle: {
-    margin: 0,
-    color: '#0f766e',
-    fontWeight: 600,
-  },
-  form: {
-    display: 'grid',
-    gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))',
-    gap: '12px',
-    alignItems: 'end',
-    background: 'linear-gradient(130deg, rgba(255,255,255,0.9), rgba(236,253,250,0.74))',
-    borderRadius: '16px',
-    padding: '16px',
-    border: '1px solid rgba(153, 246, 228, 0.4)',
-    boxShadow: '0 14px 30px rgba(15, 23, 42, 0.09)',
-  },
-  formActions: {
-    display: 'flex',
-    justifyContent: 'flex-end',
-    gap: '10px',
-    flexWrap: 'wrap',
-    gridColumn: '1 / -1',
-  },
-  label: {
-    display: 'grid',
-    gap: '6px',
-    color: '#0f766e',
-    fontWeight: 600,
-  },
-  input: {
-    width: '100%',
-    padding: '10px',
-    borderRadius: '10px',
-    border: '1px solid rgba(45, 212, 191, 0.35)',
-    background: 'rgba(255, 255, 255, 0.85)',
-    boxSizing: 'border-box',
-  },
-  saveButton: {
-    padding: '10px 16px',
-    background: 'linear-gradient(135deg, #14b8a6, #0f766e)',
-    color: '#fff',
-    border: 'none',
-    borderRadius: '999px',
-    fontWeight: 700,
-    cursor: 'pointer',
-    boxShadow: '0 8px 20px rgba(15, 118, 110, 0.3)',
-  },
-  secondaryButton: {
-    padding: '10px 16px',
-    borderRadius: '999px',
-    border: '1px solid rgba(45, 212, 191, 0.35)',
-    background: 'rgba(255, 255, 255, 0.85)',
-    color: '#0f766e',
-    fontWeight: 700,
-    cursor: 'pointer',
-  },
-  sectionTitle: {
-    marginBottom: '4px',
-    color: '#0f172a',
-  },
-  table: {
-    borderCollapse: 'collapse',
-    textAlign: 'left',
-    background: 'rgba(255,255,255,0.78)',
-    borderColor: 'rgba(94, 234, 212, 0.34)',
-  },
-  tableHead: {
-    background: 'linear-gradient(130deg, rgba(204,251,241,0.8), rgba(240,253,250,0.92))',
-  },
-  tableRow: {
-    background: 'rgba(255, 255, 255, 0.62)',
-  },
-  tableRowAlt: {
-    background: 'rgba(240, 253, 250, 0.62)',
-  },
-  tableCell: {
-    borderColor: 'rgba(94, 234, 212, 0.28)',
-  },
-  editButton: {
-    padding: '8px 12px',
-    borderRadius: '999px',
-    border: '1px solid rgba(45, 212, 191, 0.35)',
-    background: 'linear-gradient(130deg, rgba(255,255,255,0.96), rgba(236,253,250,0.92))',
-    color: '#0f766e',
-    fontWeight: 700,
-    cursor: 'pointer',
-    whiteSpace: 'nowrap',
-  },
-  deleteButton: {
-    padding: '8px 12px',
-    borderRadius: '999px',
-    border: '1px solid rgba(239, 68, 68, 0.35)',
-    background: 'linear-gradient(130deg, rgba(255,240,240,0.96), rgba(254,242,242,0.92))',
-    color: '#dc2626',
-    fontWeight: 700,
-    cursor: 'pointer',
-    whiteSpace: 'nowrap',
-  },
-  emptyText: {
-    margin: 0,
-    color: '#0f766e',
-  },
-  errorText: {
-    margin: 0,
-    color: '#dc2626',
-    fontWeight: 700,
-    gridColumn: '1 / -1',
-  },
-  successText: {
-    margin: 0,
-    color: '#16a34a',
-    fontWeight: 700,
-    gridColumn: '1 / -1',
-  },
+  container: { display: 'grid', gap: '20px' },
+  subtitle: { margin: 0, color: 'var(--text-2)', fontSize: '14px' },
+  formCard: { display: 'grid', gap: '16px', padding: '20px' },
+  formGrid: { display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(210px, 1fr))', gap: '14px' },
+  formActions: { display: 'flex', justifyContent: 'flex-end', gap: '10px' },
+  section: { display: 'grid', gap: '12px' },
+  sectionTitle: { margin: 0, fontSize: '16px', fontWeight: 800 },
+  cellStack: { display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' },
+  rowActions: { display: 'flex', gap: '6px', flexWrap: 'wrap' },
 };
 
 export default DocumentsPage;

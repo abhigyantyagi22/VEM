@@ -2,7 +2,6 @@ import React, { useEffect, useMemo, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import api from '../services/api';
 import { useAuth } from '../context/useAuth';
-import { useTheme } from '../context/ThemeContext';
 import FuelLogs from './FuelLogs';
 import MaintenancePage from './MaintenancePage';
 import DocumentsPage from './DocumentsPage';
@@ -10,28 +9,25 @@ import DriverManagement from './DriverManagement';
 import EditVehicleModal from '../components/EditVehicleModal';
 
 const SECTION_ITEMS = [
-  { key: 'fuel', label: 'Fuel' },
-  { key: 'maintenance', label: 'Maintenance' },
-  { key: 'documents', label: 'Documents' },
-  { key: 'drivers', label: 'Drivers' },
+  { key: 'fuel', label: 'Fuel', icon: '⛽' },
+  { key: 'maintenance', label: 'Maintenance', icon: '🔧' },
+  { key: 'documents', label: 'Documents', icon: '📄' },
+  { key: 'drivers', label: 'Drivers', icon: '✦' },
 ];
 
 const VehicleWorkspace = () => {
   const { id } = useParams();
   const navigate = useNavigate();
   const { userId } = useAuth();
-  const { theme } = useTheme();
   const [activeSection, setActiveSection] = useState('fuel');
   const [vehicle, setVehicle] = useState(null);
   const [showEdit, setShowEdit] = useState(false);
+  const [downloading, setDownloading] = useState(false);
 
   useEffect(() => {
     const fetchVehicle = async () => {
       try {
-        if (!userId) {
-          console.log('[VehicleWorkspace] Skipping fetch: userId not available');
-          return;
-        }
+        if (!userId) return;
         const res = await api.get(`/vehicles?userId=${userId}`);
         const selected = (res.data || []).find((item) => String(item.id) === String(id));
         setVehicle(selected || null);
@@ -39,7 +35,6 @@ const VehicleWorkspace = () => {
         console.error(error);
       }
     };
-
     fetchVehicle();
   }, [id, userId]);
 
@@ -48,49 +43,56 @@ const VehicleWorkspace = () => {
     return section ? section.label : 'Fuel';
   }, [activeSection]);
 
+  const handleDownloadReport = async () => {
+    setDownloading(true);
+    try {
+      const res = await api.get(`/reports/vehicle/${id}`, { responseType: 'blob' });
+      const url = window.URL.createObjectURL(new Blob([res.data], { type: 'application/pdf' }));
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = `${vehicle?.vehicleName || 'vehicle'}-report.pdf`;
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      window.URL.revokeObjectURL(url);
+    } catch (e) {
+      console.error(e);
+    } finally {
+      setDownloading(false);
+    }
+  };
+
   const renderContent = () => {
-    if (activeSection === 'fuel') {
-      return <FuelLogs />;
-    }
-    if (activeSection === 'maintenance') {
-      return <MaintenancePage />;
-    }
-    if (activeSection === 'documents') {
-      return <DocumentsPage />;
-    }
-    // Pass vehicle id so DriverManagement shows scoped assigned drivers and can create unassigned drivers
+    if (activeSection === 'fuel') return <FuelLogs />;
+    if (activeSection === 'maintenance') return <MaintenancePage />;
+    if (activeSection === 'documents') return <DocumentsPage />;
     return <DriverManagement key={id} />;
   };
 
   return (
     <>
-      <div style={styles.page}>
-      <header style={{ ...styles.headerCard, background: theme.bgCardGlass, border: `1px solid ${theme.border}` }}>
-        <div style={{ display: 'flex', gap: 12, alignItems: 'center' }}>
-          <button type="button" onClick={() => navigate('/vehicles')} style={styles.backButton}>
-            ← Back to Vehicles
+      <div className="page-shell" style={styles.page}>
+        <header className="glass-card anim-up" style={styles.headerCard}>
+          <button type="button" className="btn btn-ghost btn-sm" onClick={() => navigate('/vehicles')}>
+            ← Vehicles
           </button>
-          <div>
-            <h1 style={styles.vehicleName}>{vehicle?.vehicleName || 'Vehicle Workspace'}</h1>
-            <p style={styles.vehicleMeta}>{vehicle ? `${vehicle.vehicleNumber} · ${vehicle.vehicleType}` : `Vehicle ID: ${id}`}</p>
+          <div style={{ minWidth: 0, flex: 1 }}>
+            <h1 className="page-title" style={styles.vehicleName}>{vehicle?.vehicleName || 'Vehicle Workspace'}</h1>
+            <p style={styles.vehicleMeta}>
+              {vehicle ? `${vehicle.vehicleNumber} · ${vehicle.vehicleType}` : `Vehicle ID: ${id}`}
+            </p>
           </div>
-        </div>
-        <div style={{ marginLeft: 'auto', display: 'flex', alignItems: 'center' }}>
-          <button
-            type="button"
-            onClick={() => setShowEdit(true)}
-            style={styles.editButton}
-            disabled={!vehicle}
-            aria-label="Edit vehicle"
-          >
-            Edit
-          </button>
-        </div>
-      </header>
+          <div style={styles.headerActions}>
+            <button type="button" className="btn btn-ghost btn-sm" onClick={handleDownloadReport} disabled={downloading}>
+              {downloading ? '...' : '⬇ PDF Report'}
+            </button>
+            <button type="button" className="btn btn-primary btn-sm" onClick={() => setShowEdit(true)} disabled={!vehicle}>
+              ✎ Edit
+            </button>
+          </div>
+        </header>
 
-      <div style={styles.layout}>
-        <aside style={{ ...styles.sideNav, background: theme.bgCardGlass, border: `1px solid ${theme.border}` }}>
-          <p style={styles.sideLabel}>Quick Navigation</p>
+        <div className="anim-up d1" style={styles.tabs}>
           {SECTION_ITEMS.map((item) => {
             const isActive = item.key === activeSection;
             return (
@@ -98,138 +100,73 @@ const VehicleWorkspace = () => {
                 key={item.key}
                 type="button"
                 onClick={() => setActiveSection(item.key)}
-                style={isActive ? styles.navItemActive : styles.navItem}
+                style={{ ...styles.tab, ...(isActive ? styles.tabActive : {}) }}
               >
-                {item.label}
+                <span aria-hidden="true">{item.icon}</span> {item.label}
               </button>
             );
           })}
-        </aside>
+        </div>
 
-        <section style={{ ...styles.contentCard, background: theme.bgCardGlass, border: `1px solid ${theme.border}` }}>
-          <h2 style={{ ...styles.sectionTitle, color: theme.textPrimary }}>{sectionTitle}</h2>
+        <section className="glass-card anim-up d2" style={styles.contentCard} key={activeSection}>
+          <h2 style={styles.sectionTitle}>{sectionTitle}</h2>
           {renderContent()}
         </section>
       </div>
-      </div>
+
       {showEdit && (
-      <EditVehicleModal
-        vehicle={vehicle}
-        onClose={() => setShowEdit(false)}
-        onSaved={(updated) => setVehicle(updated)}
-      />
+        <EditVehicleModal
+          vehicle={vehicle}
+          onClose={() => setShowEdit(false)}
+          onSaved={(updated) => setVehicle(updated)}
+        />
       )}
     </>
   );
 };
 
 const styles = {
-  page: {
-    maxWidth: '1250px',
-    margin: '0 auto',
-    display: 'grid',
-    gap: '14px',
-  },
+  page: { display: 'grid', gap: '16px' },
   headerCard: {
-    borderRadius: '18px',
-    background: 'linear-gradient(130deg, rgba(255,255,255,0.9), rgba(236,253,250,0.74))',
-    border: '1px solid rgba(153, 246, 228, 0.4)',
-    boxShadow: '0 14px 30px rgba(15, 23, 42, 0.09)',
-    padding: '14px 16px',
     display: 'flex',
     alignItems: 'center',
-    gap: 12,
+    gap: '16px',
+    flexWrap: 'wrap',
+    padding: '18px 22px',
   },
-  backButton: {
-    border: '1px solid rgba(45, 212, 191, 0.35)',
-    borderRadius: '999px',
-    padding: '7px 12px',
-    background: 'rgba(240, 253, 250, 0.9)',
-    color: '#0f766e',
-    fontWeight: 700,
-    cursor: 'pointer',
-  },
-  vehicleName: {
-    margin: '10px 0 4px',
-    fontSize: '32px',
-    background: 'linear-gradient(130deg, #0f172a, #0f766e)',
-    WebkitBackgroundClip: 'text',
-    WebkitTextFillColor: 'transparent',
-  },
-  vehicleMeta: {
-    margin: 0,
-    color: '#0f766e',
-    fontWeight: 700,
-  },
-
-  editButton: {
-    borderRadius: 12,
-    padding: '8px 12px',
-    background: 'linear-gradient(135deg, #14b8a6, #0f766e)',
-    color: '#fff',
-    border: 'none',
-    cursor: 'pointer',
-    fontWeight: 700,
-  },
-  layout: {
-    display: 'grid',
-    gridTemplateColumns: '220px minmax(0, 1fr)',
-    gap: '14px',
-    alignItems: 'start',
-  },
-  sideNav: {
-    borderRadius: '16px',
-    background: 'linear-gradient(130deg, rgba(255,255,255,0.9), rgba(236,253,250,0.74))',
-    border: '1px solid rgba(153, 246, 228, 0.4)',
-    boxShadow: '0 14px 30px rgba(15, 23, 42, 0.09)',
-    padding: '12px',
-    display: 'grid',
+  vehicleName: { fontSize: 'clamp(22px, 3vw, 30px)' },
+  vehicleMeta: { margin: '4px 0 0', color: 'var(--text-2)', fontWeight: 600, fontSize: '13px' },
+  headerActions: { display: 'flex', gap: '8px', flexWrap: 'wrap' },
+  tabs: {
+    display: 'flex',
     gap: '8px',
-    position: 'sticky',
-    top: '96px',
+    flexWrap: 'wrap',
   },
-  sideLabel: {
-    margin: '0 0 4px',
-    color: '#0f766e',
+  tab: {
+    display: 'inline-flex',
+    alignItems: 'center',
+    gap: '8px',
+    padding: '11px 20px',
+    borderRadius: '14px',
+    border: '1px solid var(--glass-border)',
+    background: 'var(--glass)',
+    color: 'var(--text-2)',
     fontWeight: 700,
-    fontSize: '13px',
-    letterSpacing: '0.25px',
-    textTransform: 'uppercase',
-  },
-  navItem: {
-    border: '1px solid rgba(45, 212, 191, 0.35)',
-    borderRadius: '12px',
-    padding: '10px',
-    textAlign: 'left',
-    background: 'rgba(255, 255, 255, 0.74)',
-    color: '#0f766e',
-    fontWeight: 700,
+    fontSize: '14px',
     cursor: 'pointer',
+    fontFamily: 'inherit',
+    backdropFilter: 'blur(12px)',
+    WebkitBackdropFilter: 'blur(12px)',
+    transition: 'all 0.2s ease',
   },
-  navItemActive: {
-    border: '1px solid rgba(45, 212, 191, 0.52)',
-    borderRadius: '12px',
-    padding: '10px',
-    textAlign: 'left',
-    background: 'linear-gradient(135deg, #14b8a6, #0f766e)',
-    color: '#fff',
-    fontWeight: 700,
-    cursor: 'pointer',
-    boxShadow: '0 10px 20px rgba(15, 118, 110, 0.25)',
+  tabActive: {
+    background: 'var(--accent-soft)',
+    border: '1px solid var(--glass-border-bright)',
+    color: 'var(--text-1)',
+    boxShadow: 'var(--accent-glow)',
   },
-  contentCard: {
-    borderRadius: '16px',
-    background: 'linear-gradient(130deg, rgba(255,255,255,0.88), rgba(240,253,250,0.66))',
-    border: '1px solid rgba(153, 246, 228, 0.4)',
-    boxShadow: '0 14px 30px rgba(15, 23, 42, 0.09)',
-    padding: '14px',
-  },
-  sectionTitle: {
-    marginTop: 0,
-    marginBottom: '8px',
-    color: '#0f172a',
-    fontSize: '22px',
-  },
+  contentCard: { animation: 'fade-up 0.4s cubic-bezier(0.21, 0.8, 0.32, 1) both' },
+  sectionTitle: { margin: '0 0 16px', fontSize: '20px', fontWeight: 800 },
 };
 
 export default VehicleWorkspace;

@@ -8,11 +8,13 @@
 /Users/abhigyantyagi/Desktop/Projects/VEM/Project/backend/src/main/java/com/vem/backend/config/SecurityConfig.java
 /Users/abhigyantyagi/Desktop/Projects/VEM/Project/backend/src/main/java/com/vem/backend/controller/AuthController.java
 /Users/abhigyantyagi/Desktop/Projects/VEM/Project/backend/src/main/java/com/vem/backend/controller/DashboardController.java
+/Users/abhigyantyagi/Desktop/Projects/VEM/Project/backend/src/main/java/com/vem/backend/controller/DigestController.java
 /Users/abhigyantyagi/Desktop/Projects/VEM/Project/backend/src/main/java/com/vem/backend/controller/DocumentController.java
 /Users/abhigyantyagi/Desktop/Projects/VEM/Project/backend/src/main/java/com/vem/backend/controller/DriverController.java
 /Users/abhigyantyagi/Desktop/Projects/VEM/Project/backend/src/main/java/com/vem/backend/controller/FuelLogController.java
 /Users/abhigyantyagi/Desktop/Projects/VEM/Project/backend/src/main/java/com/vem/backend/controller/MaintenanceController.java
 /Users/abhigyantyagi/Desktop/Projects/VEM/Project/backend/src/main/java/com/vem/backend/controller/NotificationController.java
+/Users/abhigyantyagi/Desktop/Projects/VEM/Project/backend/src/main/java/com/vem/backend/controller/ReportController.java
 /Users/abhigyantyagi/Desktop/Projects/VEM/Project/backend/src/main/java/com/vem/backend/controller/VehicleController.java
 /Users/abhigyantyagi/Desktop/Projects/VEM/Project/backend/src/main/java/com/vem/backend/dto/DashboardDto.java
 /Users/abhigyantyagi/Desktop/Projects/VEM/Project/backend/src/main/java/com/vem/backend/dto/DocumentDto.java
@@ -43,7 +45,9 @@
 /Users/abhigyantyagi/Desktop/Projects/VEM/Project/backend/src/main/java/com/vem/backend/service/DashboardService.java
 /Users/abhigyantyagi/Desktop/Projects/VEM/Project/backend/src/main/java/com/vem/backend/service/DocumentService.java
 /Users/abhigyantyagi/Desktop/Projects/VEM/Project/backend/src/main/java/com/vem/backend/service/DriverService.java
+/Users/abhigyantyagi/Desktop/Projects/VEM/Project/backend/src/main/java/com/vem/backend/service/EmailDigestService.java
 /Users/abhigyantyagi/Desktop/Projects/VEM/Project/backend/src/main/java/com/vem/backend/service/FuelLogService.java
 /Users/abhigyantyagi/Desktop/Projects/VEM/Project/backend/src/main/java/com/vem/backend/service/MaintenanceService.java
 /Users/abhigyantyagi/Desktop/Projects/VEM/Project/backend/src/main/java/com/vem/backend/service/NotificationService.java
+/Users/abhigyantyagi/Desktop/Projects/VEM/Project/backend/src/main/java/com/vem/backend/service/ReportService.java
 /Users/abhigyantyagi/Desktop/Projects/VEM/Project/backend/src/main/java/com/vem/backend/service/VehicleService.java

@@ -4,7 +4,7 @@ import { light, dark } from '../theme/tokens';
 const ThemeContext = createContext(null);
 
 export const ThemeProvider = ({ children }) => {
-  const [isDark, setIsDark] = useState(() => localStorage.getItem('vem-theme') === 'dark');
+  const [isDark, setIsDark] = useState(() => localStorage.getItem('vem-theme') !== 'light');
 
   useEffect(() => {
     document.documentElement.setAttribute('data-theme', isDark ? 'dark' : 'light');

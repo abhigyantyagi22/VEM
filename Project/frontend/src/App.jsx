@@ -15,6 +15,7 @@ const MaintenancePage = lazy(() => import('./pages/MaintenancePage'));
 const DocumentsPage = lazy(() => import('./pages/DocumentsPage'));
 const VehicleWorkspace = lazy(() => import('./pages/VehicleWorkspace'));
 const Profile = lazy(() => import('./pages/Profile'));
+const About = lazy(() => import('./pages/About'));
 
 const PrivateRoute = ({ children }) => {
   const { isAuthenticated } = useAuth();
@@ -25,12 +26,12 @@ const routeFallbackStyles = {
   minHeight: '35vh',
   display: 'grid',
   placeItems: 'center',
-  color: '#475569',
+  color: 'var(--text-2)',
   fontWeight: 700,
 };
 
 const appShellStyles = {
-  padding: '78px 20px 110px',
+  padding: '104px 20px 60px',
 };
 
 const authShellStyles = {
@@ -60,6 +61,7 @@ const AppContent = () => {
             <Route path="/vehicles/:id/maintenance" element={<PrivateRoute><MaintenancePage /></PrivateRoute>} />
             <Route path="/vehicles/:id/documents" element={<PrivateRoute><DocumentsPage /></PrivateRoute>} />
             <Route path="/profile" element={<PrivateRoute><Profile /></PrivateRoute>} />
+            <Route path="/about" element={<About />} />
             <Route path="/" element={<Navigate to="/dashboard" />} />
           </Routes>
         </Suspense>

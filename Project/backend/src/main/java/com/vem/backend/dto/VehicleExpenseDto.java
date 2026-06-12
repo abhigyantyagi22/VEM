@@ -4,7 +4,11 @@ public class VehicleExpenseDto {
     private Long vehicleId;
     private String vehicleName;
     private String vehicleNumber;
-    private Double totalExpense;
+    private Double totalExpense; // total cost of ownership (fuel + maintenance)
+    private Double fuelCost;
+    private Double maintenanceCost;
+    private Double kmPerL;
+    private Double costPerKm;
 
     public VehicleExpenseDto() {}
 
@@ -19,4 +23,16 @@ public class VehicleExpenseDto {
 
     public Double getTotalExpense() { return totalExpense; }
     public void setTotalExpense(Double totalExpense) { this.totalExpense = totalExpense; }
+
+    public Double getFuelCost() { return fuelCost; }
+    public void setFuelCost(Double fuelCost) { this.fuelCost = fuelCost; }
+
+    public Double getMaintenanceCost() { return maintenanceCost; }
+    public void setMaintenanceCost(Double maintenanceCost) { this.maintenanceCost = maintenanceCost; }
+
+    public Double getKmPerL() { return kmPerL; }
+    public void setKmPerL(Double kmPerL) { this.kmPerL = kmPerL; }
+
+    public Double getCostPerKm() { return costPerKm; }
+    public void setCostPerKm(Double costPerKm) { this.costPerKm = costPerKm; }
 }

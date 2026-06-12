@@ -1,7 +1,6 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { useParams } from 'react-router-dom';
 import api from '../services/api';
-import { useTheme } from '../context/ThemeContext';
 import ConfirmModal from '../components/ConfirmModal';
 
 const getToday = () => new Date().toISOString().split('T')[0];
@@ -11,9 +10,15 @@ const parseNumber = (value) => {
   return Number.isFinite(num) ? num : 0;
 };
 
+const formatRupees = (value) =>
+  new Intl.NumberFormat('en-IN', {
+    style: 'currency',
+    currency: 'INR',
+    maximumFractionDigits: 2,
+  }).format(Number(value || 0));
+
 const FuelLogs = () => {
   const { id } = useParams();
-  const { theme } = useTheme();
   const [logs, setLogs] = useState([]);
   const [confirm, setConfirm] = useState(null);
   const [showModal, setShowModal] = useState(false);
@@ -27,14 +32,6 @@ const FuelLogs = () => {
     kilometersRun: '',
     date: getToday(),
   });
-
-  const formatRupees = (value) => {
-    return new Intl.NumberFormat('en-IN', {
-      style: 'currency',
-      currency: 'INR',
-      maximumFractionDigits: 2,
-    }).format(Number(value || 0));
-  };
 
   const fetchLogs = async () => {
     try {
@@ -53,13 +50,10 @@ const FuelLogs = () => {
   const stats = useMemo(() => {
     const totalBill = logs.reduce((sum, log) => sum + parseNumber(log.fuelCost), 0);
     const totalFuel = logs.reduce((sum, log) => sum + parseNumber(log.fuelAmount), 0);
+    const totalKm = logs.reduce((sum, log) => sum + parseNumber(log.distanceDriven), 0);
     const avgRate = totalFuel > 0 ? totalBill / totalFuel : 0;
-
-    return {
-      totalBill,
-      totalFuel,
-      avgRate,
-    };
+    const kmPerL = totalFuel > 0 && totalKm > 0 ? totalKm / totalFuel : 0;
+    return { totalBill, totalFuel, avgRate, kmPerL };
   }, [logs]);
 
   const closeModal = () => {
@@ -136,13 +130,11 @@ const FuelLogs = () => {
     try {
       setSaving(true);
       setError('');
-
       if (editingLog) {
         await api.put(`/fuel/${editingLog.id}`, payload);
       } else {
         await api.post('/fuel', payload);
       }
-
       await fetchLogs();
       closeModal();
     } catch (e) {
@@ -171,67 +163,68 @@ const FuelLogs = () => {
 
   return (
     <div style={styles.container}>
-      <div style={styles.pageHeader}>
-        <div>
-          <h2 style={styles.title}>Fuel Logs</h2>
-          <p style={styles.subtitle}>Vehicle ID: {id}</p>
-        </div>
-        <button type="button" onClick={openAddModal} style={styles.addButton}>
+      <div className="row-between">
+        <p style={styles.subtitle}>Track refuels, efficiency, and spend.</p>
+        <button type="button" className="btn btn-primary btn-sm" onClick={openAddModal}>
           + Add Log
         </button>
       </div>
 
-      <div style={styles.statsGrid}>
-        <div style={{ ...styles.statCard, background: theme.bgCardGlass, border: `1px solid ${theme.border}` }}>
-          <div style={{ ...styles.statLabel, color: theme.textAccent }}>Total Fuel Spent</div>
-          <div style={{ ...styles.statValue, color: theme.textPrimary }}>{formatRupees(stats.totalBill)}</div>
+      <div className="grid-stats">
+        <div className="glass-inset" style={styles.stat}>
+          <span style={styles.statLabel}>Total Fuel Spent</span>
+          <span style={styles.statValue}>{formatRupees(stats.totalBill)}</span>
         </div>
-        <div style={{ ...styles.statCard, background: theme.bgCardGlass, border: `1px solid ${theme.border}` }}>
-          <div style={{ ...styles.statLabel, color: theme.textAccent }}>Total Fuel Added</div>
-          <div style={{ ...styles.statValue, color: theme.textPrimary }}>{stats.totalFuel.toFixed(2)} L</div>
+        <div className="glass-inset" style={styles.stat}>
+          <span style={styles.statLabel}>Fuel Added</span>
+          <span style={styles.statValue}>{stats.totalFuel.toFixed(2)} L</span>
         </div>
-        <div style={{ ...styles.statCard, background: theme.bgCardGlass, border: `1px solid ${theme.border}` }}>
-          <div style={{ ...styles.statLabel, color: theme.textAccent }}>Average Fuel Rate</div>
-          <div style={{ ...styles.statValue, color: theme.textPrimary }}>{formatRupees(stats.avgRate)} /L</div>
+        <div className="glass-inset" style={styles.stat}>
+          <span style={styles.statLabel}>Avg Rate</span>
+          <span style={styles.statValue}>{formatRupees(stats.avgRate)}<span style={styles.unit}>/L</span></span>
+        </div>
+        <div className="glass-inset" style={styles.stat}>
+          <span style={styles.statLabel}>Efficiency</span>
+          <span style={styles.statValue}>{stats.kmPerL ? stats.kmPerL.toFixed(2) : '—'}<span style={styles.unit}>km/L</span></span>
         </div>
       </div>
 
-      <div style={{ ...styles.historyCard, background: theme.bgCardGlass, border: `1px solid ${theme.border}` }}>
-        <h3 style={{ ...styles.historyTitle, color: theme.textPrimary }}>Fuel History</h3>
-        {logs.length === 0 ? (
-          <p style={styles.emptyText}>No fuel logs yet. Click Add Log to create your first entry.</p>
-        ) : (
-          <table border="1" cellPadding="10" width="100%" style={{ ...styles.table, background: theme.bgTable }}>
-            <thead style={{ background: theme.bgTableHead }}>
+      {error && !showModal && <div className="alert alert-error">{error}</div>}
+
+      {logs.length === 0 ? (
+        <div className="empty-state">
+          <span className="icon">⛽</span>
+          No fuel logs yet — click “Add Log” to create your first entry.
+        </div>
+      ) : (
+        <div className="table-wrap">
+          <table className="glass-table">
+            <thead>
               <tr>
                 <th>Date</th>
                 <th>Amount (L)</th>
                 <th>Rate (/L)</th>
                 <th>Total Bill</th>
-                <th>Kilometers Run</th>
-                <th>Action</th>
+                <th>KM Run</th>
+                <th>Actions</th>
               </tr>
             </thead>
             <tbody>
-              {logs.map((log, index) => {
+              {logs.map((log) => {
                 const amount = parseNumber(log.fuelAmount);
                 const cost = parseNumber(log.fuelCost);
                 const rate = amount > 0 ? cost / amount : 0;
                 return (
-                  <tr key={log.id} style={{ background: index % 2 === 0 ? theme.bgTableRowEven : theme.bgTableRowOdd, color: theme.textPrimary }}>
-                    <td style={styles.tableCell}>{log.date}</td>
-                    <td style={styles.tableCell}>{amount}</td>
-                    <td style={styles.tableCell}>{formatRupees(rate)}</td>
-                    <td style={styles.tableCell}>{formatRupees(cost)}</td>
-                    <td style={styles.tableCell}>{log.distanceDriven}</td>
-                    <td style={styles.tableCell}>
-                      <div style={{ display: 'flex', gap: '8px' }}>
-                        <button type="button" onClick={() => openEditModal(log)} style={styles.editButton}>
-                          Edit
-                        </button>
-                        <button type="button" onClick={() => handleDelete(log.id)} style={styles.deleteButton}>
-                          🗑️ Delete
-                        </button>
+                  <tr key={log.id}>
+                    <td>{log.date}</td>
+                    <td>{amount}</td>
+                    <td>{formatRupees(rate)}</td>
+                    <td style={{ fontWeight: 700 }}>{formatRupees(cost)}</td>
+                    <td>{log.distanceDriven}</td>
+                    <td>
+                      <div style={styles.rowActions}>
+                        <button type="button" className="btn btn-ghost btn-sm" onClick={() => openEditModal(log)}>Edit</button>
+                        <button type="button" className="btn btn-danger btn-sm" onClick={() => handleDelete(log.id)}>Delete</button>
                       </div>
                     </td>
                   </tr>
@@ -239,305 +232,111 @@ const FuelLogs = () => {
               })}
             </tbody>
           </table>
-        )}
-      </div>
+        </div>
+      )}
 
       {showModal && (
-        <div style={styles.modalOverlay} role="presentation" onClick={closeModal}>
-          <div style={{ ...styles.modal, background: theme.bgModal }} role="dialog" aria-modal="true" aria-labelledby="fuel-modal-title" onClick={(e) => e.stopPropagation()}>
-            <div style={styles.modalHeader}>
-              <h3 id="fuel-modal-title" style={{ ...styles.modalTitle, color: theme.textPrimary }}>{editingLog ? 'Edit Fuel Log' : 'Add Fuel Log'}</h3>
-              <button type="button" style={styles.closeButton} onClick={closeModal} aria-label="Close">×</button>
+        <div className="modal-overlay" role="presentation" onClick={closeModal}>
+          <div className="modal-card" role="dialog" aria-modal="true" aria-labelledby="fuel-modal-title" onClick={(e) => e.stopPropagation()}>
+            <div className="modal-head">
+              <h3 id="fuel-modal-title" className="modal-title">{editingLog ? 'Edit Fuel Log' : 'Add Fuel Log'}</h3>
+              <button type="button" className="modal-close" onClick={closeModal} aria-label="Close">×</button>
             </div>
 
             <form onSubmit={handleSubmit} style={styles.modalForm}>
-              <label style={styles.fieldLabel}>
-                Fuel Amount (L)
+              <div style={styles.formRow}>
+                <div className="field">
+                  <label className="field-label">Fuel Amount (L)</label>
+                  <input
+                    className="input"
+                    type="number"
+                    step="0.01"
+                    min="0"
+                    required
+                    value={form.fuelAmount}
+                    onChange={(e) => handleChange('fuelAmount', e.target.value)}
+                    placeholder="0.00"
+                  />
+                </div>
+                <div className="field">
+                  <label className="field-label">Rate (₹/L)</label>
+                  <input
+                    className="input"
+                    type="number"
+                    step="0.01"
+                    min="0"
+                    required
+                    value={form.fuelRate}
+                    onChange={(e) => handleChange('fuelRate', e.target.value)}
+                    placeholder="0.00"
+                  />
+                </div>
+              </div>
+              <div style={styles.formRow}>
+                <div className="field">
+                  <label className="field-label">Total Bill (₹)</label>
+                  <input
+                    className="input"
+                    type="number"
+                    step="0.01"
+                    min="0"
+                    required
+                    value={form.totalBill}
+                    onChange={(e) => handleChange('totalBill', e.target.value)}
+                    placeholder="auto-calculated"
+                  />
+                </div>
+                <div className="field">
+                  <label className="field-label">Kilometers Run</label>
+                  <input
+                    className="input"
+                    type="number"
+                    min="1"
+                    required
+                    value={form.kilometersRun}
+                    onChange={(e) => setForm((p) => ({ ...p, kilometersRun: e.target.value }))}
+                    placeholder="km since last refuel"
+                  />
+                </div>
+              </div>
+              <div className="field">
+                <label className="field-label">Date</label>
                 <input
-                  type="number"
-                  step="0.01"
-                  min="0"
-                  required
-                  value={form.fuelAmount}
-                  onChange={(e) => handleChange('fuelAmount', e.target.value)}
-                  style={styles.input}
-                  placeholder="e.g. 20"
-                />
-              </label>
-
-              <label style={styles.fieldLabel}>
-                Fuel Rate (₹/L)
-                <input
-                  type="number"
-                  step="0.01"
-                  min="0"
-                  required
-                  value={form.fuelRate}
-                  onChange={(e) => handleChange('fuelRate', e.target.value)}
-                  style={styles.input}
-                  placeholder="e.g. 102.5"
-                />
-              </label>
-
-              <label style={styles.fieldLabel}>
-                Total Fuel Bill (₹)
-                <input
-                  type="number"
-                  step="0.01"
-                  min="0"
-                  required
-                  value={form.totalBill}
-                  onChange={(e) => handleChange('totalBill', e.target.value)}
-                  style={styles.input}
-                  placeholder="e.g. 2050"
-                />
-              </label>
-
-              <label style={styles.fieldLabel}>
-                Vehicle Ran (km)
-                <input
-                  type="number"
-                  min="0"
-                  required
-                  value={form.kilometersRun}
-                  onChange={(e) => handleChange('kilometersRun', e.target.value)}
-                  style={styles.input}
-                  placeholder="e.g. 45200"
-                />
-              </label>
-
-              <label style={styles.fieldLabel}>
-                Date
-                <input
+                  className="input"
                   type="date"
                   required
                   value={form.date}
-                  onChange={(e) => handleChange('date', e.target.value)}
-                  style={styles.input}
+                  onChange={(e) => setForm((p) => ({ ...p, date: e.target.value }))}
                 />
-              </label>
-
-              {error && <p style={styles.errorText}>{error}</p>}
-
+              </div>
+              {error && <div className="alert alert-error">{error}</div>}
               <div style={styles.modalActions}>
-                <button type="button" onClick={closeModal} style={styles.secondaryButton}>Cancel</button>
-                <button type="submit" disabled={saving} style={styles.primaryButton}>
-                  {saving ? 'Saving...' : editingLog ? 'Update Log' : 'Save Log'}
+                <button type="button" className="btn btn-ghost" onClick={closeModal}>Cancel</button>
+                <button type="submit" className="btn btn-primary" disabled={saving}>
+                  {saving ? 'Saving...' : editingLog ? 'Update Log' : 'Add Log'}
                 </button>
               </div>
             </form>
           </div>
         </div>
       )}
-    {confirm && <ConfirmModal message={confirm.message} onConfirm={confirm.onConfirm} onCancel={() => setConfirm(null)} />}
+
+      {confirm && <ConfirmModal message={confirm.message} onConfirm={confirm.onConfirm} onCancel={() => setConfirm(null)} />}
     </div>
   );
 };
 
 const styles = {
-  container: {
-    maxWidth: '1100px',
-    margin: '0 auto',
-    display: 'grid',
-    gap: '18px',
-  },
-  pageHeader: {
-    display: 'flex',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    gap: '16px',
-    flexWrap: 'wrap',
-  },
-  title: {
-    margin: 0,
-    fontSize: '34px',
-    fontWeight: 800,
-    background: 'linear-gradient(130deg, #0f172a, #0f766e)',
-    WebkitBackgroundClip: 'text',
-    WebkitTextFillColor: 'transparent',
-  },
-  subtitle: {
-    margin: '4px 0 0',
-    color: '#0f766e',
-    fontWeight: 600,
-  },
-  addButton: {
-    padding: '12px 22px',
-    border: 'none',
-    borderRadius: '14px',
-    color: '#fff',
-    background: 'linear-gradient(135deg, #14b8a6, #0f766e)',
-    fontWeight: 700,
-    cursor: 'pointer',
-    boxShadow: '0 8px 20px rgba(15, 118, 110, 0.3)',
-  },
-  statsGrid: {
-    display: 'grid',
-    gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))',
-    gap: '14px',
-  },
-  statCard: {
-    background: 'linear-gradient(130deg, rgba(255,255,255,0.88), rgba(236,253,250,0.7))',
-    border: '1px solid rgba(153, 246, 228, 0.36)',
-    borderRadius: '16px',
-    padding: '14px 16px',
-    boxShadow: '0 12px 24px rgba(15, 23, 42, 0.08)',
-  },
-  statLabel: {
-    color: '#0f766e',
-    fontWeight: 600,
-    fontSize: '14px',
-  },
-  statValue: {
-    marginTop: '6px',
-    color: '#0f172a',
-    fontSize: '24px',
-    fontWeight: 800,
-  },
-  historyCard: {
-    background: 'linear-gradient(130deg, rgba(255,255,255,0.9), rgba(236,253,250,0.74))',
-    border: '1px solid rgba(153, 246, 228, 0.4)',
-    borderRadius: '16px',
-    padding: '14px',
-    overflowX: 'auto',
-    boxShadow: '0 14px 30px rgba(15, 23, 42, 0.09)',
-  },
-  historyTitle: {
-    marginTop: 0,
-    marginBottom: '10px',
-    color: '#1f2937',
-  },
-  emptyText: {
-    margin: 0,
-    color: '#64748b',
-  },
-  table: {
-    borderCollapse: 'collapse',
-    textAlign: 'left',
-    background: 'rgba(255,255,255,0.78)',
-    borderColor: 'rgba(94, 234, 212, 0.34)',
-  },
-  tableHead: {
-    background: 'linear-gradient(130deg, rgba(204,251,241,0.8), rgba(240,253,250,0.92))',
-  },
-  tableRow: {
-    background: 'rgba(255, 255, 255, 0.62)',
-  },
-  tableRowAlt: {
-    background: 'rgba(240, 253, 250, 0.62)',
-  },
-  tableCell: {
-    borderColor: 'rgba(94, 234, 212, 0.28)',
-  },
-  editButton: {
-    padding: '7px 12px',
-    border: '1px solid rgba(45, 212, 191, 0.45)',
-    borderRadius: '999px',
-    background: 'linear-gradient(135deg, rgba(240,253,250,0.92), rgba(204,251,241,0.85))',
-    color: '#0f766e',
-    fontWeight: 700,
-    cursor: 'pointer',
-  },
-  deleteButton: {
-    padding: '7px 12px',
-    border: '1px solid rgba(239, 68, 68, 0.35)',
-    borderRadius: '999px',
-    background: 'linear-gradient(130deg, rgba(255,240,240,0.96), rgba(254,242,242,0.92))',
-    color: '#dc2626',
-    fontWeight: 700,
-    cursor: 'pointer',
-    whiteSpace: 'nowrap',
-  },
-  modalOverlay: {
-    position: 'fixed',
-    inset: 0,
-    background: 'rgba(2, 6, 23, 0.45)',
-    backdropFilter: 'blur(8px)',
-    WebkitBackdropFilter: 'blur(8px)',
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'center',
-    padding: '20px',
-    zIndex: 3000,
-  },
-  modal: {
-    width: '100%',
-    maxWidth: '560px',
-    background: '#ffffff',
-    borderRadius: '16px',
-    border: '1px solid #e2e8f0',
-    boxShadow: '0 24px 60px rgba(15, 23, 42, 0.22)',
-    padding: '20px',
-  },
-  modalHeader: {
-    display: 'flex',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: '14px',
-  },
-  modalTitle: {
-    margin: 0,
-    color: '#0f172a',
-  },
-  closeButton: {
-    width: '34px',
-    height: '34px',
-    borderRadius: '50%',
-    border: '1px solid #dbe3ee',
-    background: '#fff',
-    fontSize: '22px',
-    lineHeight: 1,
-    cursor: 'pointer',
-  },
-  modalForm: {
-    display: 'grid',
-    gap: '12px',
-  },
-  fieldLabel: {
-    display: 'grid',
-    gap: '6px',
-    color: '#334155',
-    fontWeight: 700,
-    fontSize: '14px',
-  },
-  input: {
-    width: '100%',
-    padding: '11px 12px',
-    borderRadius: '10px',
-    border: '1px solid #cbd5e1',
-    boxSizing: 'border-box',
-    fontSize: '14px',
-  },
-  errorText: {
-    margin: 0,
-    color: '#dc2626',
-    fontWeight: 700,
-  },
-  modalActions: {
-    display: 'flex',
-    justifyContent: 'flex-end',
-    gap: '10px',
-    marginTop: '4px',
-    flexWrap: 'wrap',
-  },
-  secondaryButton: {
-    padding: '10px 16px',
-    borderRadius: '10px',
-    border: '1px solid #d1d5db',
-    background: '#f8fafc',
-    color: '#1f2937',
-    fontWeight: 700,
-    cursor: 'pointer',
-  },
-  primaryButton: {
-    padding: '10px 16px',
-    borderRadius: '10px',
-    border: 'none',
-    background: 'linear-gradient(135deg, #0ea5e9, #0284c7)',
-    color: '#fff',
-    fontWeight: 700,
-    cursor: 'pointer',
-  },
+  container: { display: 'grid', gap: '18px' },
+  subtitle: { margin: 0, color: 'var(--text-2)', fontSize: '14px' },
+  stat: { display: 'grid', gap: '6px' },
+  statLabel: { fontSize: '11px', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '1px', color: 'var(--accent-1)' },
+  statValue: { fontSize: '21px', fontWeight: 800, color: 'var(--text-1)' },
+  unit: { fontSize: '12px', fontWeight: 600, color: 'var(--text-3)', marginLeft: '3px' },
+  rowActions: { display: 'flex', gap: '6px', flexWrap: 'wrap' },
+  modalForm: { display: 'grid', gap: '16px' },
+  formRow: { display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '14px' },
+  modalActions: { display: 'flex', justifyContent: 'flex-end', gap: '10px', marginTop: '4px' },
 };
 
 export default FuelLogs;

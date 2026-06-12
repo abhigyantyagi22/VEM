@@ -41,15 +41,20 @@ public class DashboardService {
                 .filter(m -> m.getCost() != null)
                 .mapToDouble(Maintenance::getCost).sum();
 
-        Map<Long, Double> expenseByVehicle = new HashMap<>();
+        Map<Long, Double> fuelCostByVehicle = new HashMap<>();
+        Map<Long, Double> fuelLitresByVehicle = new HashMap<>();
+        Map<Long, Long> kmByVehicle = new HashMap<>();
         for (FuelLog l : allFuelLogs) {
-            if (l.getFuelCost() != null && l.getVehicle() != null) {
-                expenseByVehicle.merge(l.getVehicle().getId(), l.getFuelCost(), Double::sum);
-            }
+            if (l.getVehicle() == null) continue;
+            Long vid = l.getVehicle().getId();
+            if (l.getFuelCost() != null) fuelCostByVehicle.merge(vid, l.getFuelCost(), Double::sum);
+            if (l.getFuelAmount() != null) fuelLitresByVehicle.merge(vid, l.getFuelAmount(), Double::sum);
+            if (l.getDistanceDriven() != null && l.getDistanceDriven() > 0) kmByVehicle.merge(vid, l.getDistanceDriven(), Long::sum);
         }
+        Map<Long, Double> maintCostByVehicle = new HashMap<>();
         for (Maintenance m : allMaintLogs) {
             if (m.getCost() != null && m.getVehicle() != null) {
-                expenseByVehicle.merge(m.getVehicle().getId(), m.getCost(), Double::sum);
+                maintCostByVehicle.merge(m.getVehicle().getId(), m.getCost(), Double::sum);
             }
         }
 
@@ -58,7 +63,15 @@ public class DashboardService {
             d.setVehicleId(v.getId());
             d.setVehicleName(v.getVehicleName());
             d.setVehicleNumber(v.getVehicleNumber());
-            d.setTotalExpense(expenseByVehicle.getOrDefault(v.getId(), 0.0));
+            double fuel = fuelCostByVehicle.getOrDefault(v.getId(), 0.0);
+            double maint = maintCostByVehicle.getOrDefault(v.getId(), 0.0);
+            double litres = fuelLitresByVehicle.getOrDefault(v.getId(), 0.0);
+            long km = kmByVehicle.getOrDefault(v.getId(), 0L);
+            d.setFuelCost(fuel);
+            d.setMaintenanceCost(maint);
+            d.setTotalExpense(fuel + maint);
+            d.setKmPerL(litres > 0 && km > 0 ? Math.round((km / litres) * 100.0) / 100.0 : 0.0);
+            d.setCostPerKm(km > 0 ? Math.round(((fuel + maint) / km) * 100.0) / 100.0 : 0.0);
             return d;
         }).sorted((a, b) -> Double.compare(b.getTotalExpense(), a.getTotalExpense()))
                 .collect(java.util.stream.Collectors.toList());
@@ -137,7 +150,8 @@ public class DashboardService {
                 mileage = distance / totalFuelAdded;
             }
             if (distance > 0) {
-                costPerKm = totalFuelCost / distance;
+                // true running cost: fuel + maintenance per km
+                costPerKm = (totalFuelCost + totalMaintCost) / distance;
             }
         }
         
