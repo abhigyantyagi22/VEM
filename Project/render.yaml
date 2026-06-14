@@ -16,6 +16,6 @@ services:
       - key: JWT_SECRET
         sync: false
       - key: CORS_ALLOWED_ORIGIN_PATTERNS
-        value: https://vem-ochre.vercel.app
+        value: https://vem-ochre.vercel.app,https://vem-*.vercel.app
       - key: SERVER_PORT
         value: 8080
