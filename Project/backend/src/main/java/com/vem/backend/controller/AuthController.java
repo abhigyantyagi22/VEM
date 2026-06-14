@@ -13,11 +13,6 @@ import org.springframework.web.bind.annotation.*;
 @RestController
 @RequestMapping("/api/auth")
 
-@CrossOrigin(
-        origins = "https://vem-ochre.vercel.app",
-        allowCredentials = "true"
-)
-
 public class AuthController {
 
     private final AuthService authService;

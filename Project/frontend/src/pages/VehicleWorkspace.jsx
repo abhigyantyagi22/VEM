@@ -7,6 +7,7 @@ import MaintenancePage from './MaintenancePage';
 import DocumentsPage from './DocumentsPage';
 import DriverManagement from './DriverManagement';
 import EditVehicleModal from '../components/EditVehicleModal';
+import { downloadVehicleReport } from '../utils/reports';
 
 const SECTION_ITEMS = [
   { key: 'fuel', label: 'Fuel', icon: '⛽' },
@@ -28,7 +29,7 @@ const VehicleWorkspace = () => {
     const fetchVehicle = async () => {
       try {
         if (!userId) return;
-        const res = await api.get(`/vehicles?userId=${userId}`);
+        const res = await api.get('/vehicles');
         const selected = (res.data || []).find((item) => String(item.id) === String(id));
         setVehicle(selected || null);
       } catch (error) {
@@ -46,15 +47,7 @@ const VehicleWorkspace = () => {
   const handleDownloadReport = async () => {
     setDownloading(true);
     try {
-      const res = await api.get(`/reports/vehicle/${id}`, { responseType: 'blob' });
-      const url = window.URL.createObjectURL(new Blob([res.data], { type: 'application/pdf' }));
-      const link = document.createElement('a');
-      link.href = url;
-      link.download = `${vehicle?.vehicleName || 'vehicle'}-report.pdf`;
-      document.body.appendChild(link);
-      link.click();
-      link.remove();
-      window.URL.revokeObjectURL(url);
+      await downloadVehicleReport(id, vehicle?.vehicleName);
     } catch (e) {
       console.error(e);
     } finally {

@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import api from '../services/api';
 import { useAuth } from '../context/useAuth';
-import { useTheme } from '../context/ThemeContext';
+import { useTheme } from '../context/useTheme';
 
 const NAV_LINKS = [
   { to: '/dashboard', label: 'Dashboard', icon: '◈' },
@@ -24,7 +24,7 @@ const Navbar = () => {
     const fetchNotifications = async () => {
       if (isAuthenticated && userId) {
         try {
-          const res = await api.get(`/notifications/${userId}`);
+          const res = await api.get('/notifications');
           setNotifications(res.data);
         } catch {
           setNotifications([]);

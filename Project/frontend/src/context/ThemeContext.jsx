@@ -1,7 +1,6 @@
-import React, { createContext, useContext, useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import { light, dark } from '../theme/tokens';
-
-const ThemeContext = createContext(null);
+import { ThemeContext } from './themeContextStore';
 
 export const ThemeProvider = ({ children }) => {
   const [isDark, setIsDark] = useState(() => localStorage.getItem('vem-theme') !== 'light');
@@ -19,10 +18,4 @@ export const ThemeProvider = ({ children }) => {
       {children}
     </ThemeContext.Provider>
   );
-};
-
-export const useTheme = () => {
-  const ctx = useContext(ThemeContext);
-  if (!ctx) throw new Error('useTheme must be used within ThemeProvider');
-  return ctx;
 };

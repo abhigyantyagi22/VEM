@@ -1,33 +1,9 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { jwtDecode } from 'jwt-decode';
-import { isTokenExpired } from '../utils/auth';
+import { getValidToken } from '../utils/auth';
 import { AuthContext } from './authContextStore';
 
-const readToken = () => {
-  const raw = localStorage.getItem('token');
-  if (!raw) return null;
-
-  let token = raw;
-  if (token.length >= 2 && ((token[0] === '"' && token[token.length - 1] === '"') || (token[0] === '\'' && token[token.length - 1] === '\''))) {
-    token = token.slice(1, -1);
-  }
-
-  if (token.trim().startsWith('{')) {
-    try {
-      const parsed = JSON.parse(token);
-      if (typeof parsed === 'string') return parsed;
-      token = parsed.token || parsed.accessToken || parsed.jwt || null;
-    } catch {
-      return null;
-    }
-  }
-
-  if (!token || isTokenExpired(token)) {
-    return null;
-  }
-
-  return token;
-};
+const readToken = () => getValidToken();
 
 const readUserId = (token) => {
   try {

@@ -10,11 +10,6 @@ import java.util.List;
 @RestController
 @RequestMapping("/api/notifications")
 
-@CrossOrigin(
-        origins = "https://vem-ochre.vercel.app",
-        allowCredentials = "true"
-)
-
 public class NotificationController {
 
     private final NotificationService notificationService;
@@ -23,8 +18,8 @@ public class NotificationController {
         this.notificationService = notificationService;
     }
 
-    @GetMapping("/{userId}")
-    public ResponseEntity<List<String>> getNotifications(@AuthenticationPrincipal com.vem.backend.service.AuthenticatedUserDetails currentUser, @PathVariable Long userId) {
+    @GetMapping
+    public ResponseEntity<List<String>> getNotifications(@AuthenticationPrincipal com.vem.backend.service.AuthenticatedUserDetails currentUser) {
         return ResponseEntity.ok(notificationService.getNotifications(currentUser.getId()));
     }
 }

@@ -11,11 +11,6 @@ import org.springframework.web.bind.annotation.*;
 @RestController
 @RequestMapping("/api/dashboard")
 
-@CrossOrigin(
-        origins = "https://vem-ochre.vercel.app",
-        allowCredentials = "true"
-)
-
 public class DashboardController {
 
     private final DashboardService dashboardService;

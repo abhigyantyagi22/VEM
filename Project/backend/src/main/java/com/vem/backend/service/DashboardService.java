@@ -11,22 +11,24 @@ import com.vem.backend.repository.FuelLogRepository;
 import com.vem.backend.repository.MaintenanceRepository;
 import org.springframework.stereotype.Service;
 
-import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
-import java.time.temporal.ChronoUnit;
 import java.util.*;
 
 @Service
 public class DashboardService {
 
+    private static final int FLEET_ALERT_WINDOW_DAYS = 30;
+
     private final FuelLogRepository fuelLogRepository;
     private final MaintenanceRepository maintenanceRepository;
     private final VehicleRepository vehicleRepository;
+    private final AlertService alertService;
 
-    public DashboardService(FuelLogRepository fuelLogRepository, MaintenanceRepository maintenanceRepository, VehicleRepository vehicleRepository) {
+    public DashboardService(FuelLogRepository fuelLogRepository, MaintenanceRepository maintenanceRepository, VehicleRepository vehicleRepository, AlertService alertService) {
         this.fuelLogRepository = fuelLogRepository;
         this.maintenanceRepository = maintenanceRepository;
         this.vehicleRepository = vehicleRepository;
+        this.alertService = alertService;
     }
 
     public FleetDashboardDto getFleetDashboardData(Long userId) {
@@ -76,30 +78,13 @@ public class DashboardService {
         }).sorted((a, b) -> Double.compare(b.getTotalExpense(), a.getTotalExpense()))
                 .collect(java.util.stream.Collectors.toList());
 
-        LocalDate today = LocalDate.now();
-        List<String> alerts = new ArrayList<>();
-        for (Vehicle v : vehicles) {
-            allMaintLogs.stream()
-                    .filter(m -> m.getVehicle() != null && m.getVehicle().getId().equals(v.getId()))
-                    .findFirst()
-                    .ifPresent(latest -> {
-                        if (latest.getNextDue() == null) return;
-                        long days = ChronoUnit.DAYS.between(today, latest.getNextDue());
-                        if (days < 0) {
-                            alerts.add(v.getVehicleName() + ": Service OVERDUE (" + latest.getServiceType() + ")");
-                        } else if (days <= 30) {
-                            alerts.add(v.getVehicleName() + ": Service due in " + days + " day" + (days == 1 ? "" : "s") + " (" + latest.getServiceType() + ")");
-                        }
-                    });
-        }
-
         FleetDashboardDto dto = new FleetDashboardDto();
         dto.setTotalVehicles(vehicles.size());
         dto.setTotalFuelCost(totalFuelCost);
         dto.setTotalMaintenanceCost(totalMaintCost);
         dto.setTotalFleetExpense(totalFuelCost + totalMaintCost);
         dto.setVehicleExpenses(vehicleExpenses);
-        dto.setUpcomingAlerts(alerts);
+        dto.setUpcomingAlerts(alertService.getAlertMessages(userId, FLEET_ALERT_WINDOW_DAYS));
         return dto;
     }
 

@@ -1,1 +1,19 @@
 .vercel
+
+# macOS
+.DS_Store
+
+# Dependencies
+node_modules/
+
+# Build output
+dist/
+target/
+
+# Logs
+*.log
+
+# Environment files (real secrets — never commit; .env.example is the tracked template)
+.env
+.env.local
+.env.*.local

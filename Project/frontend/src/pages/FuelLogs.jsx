@@ -1,7 +1,8 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { useParams } from 'react-router-dom';
 import api from '../services/api';
 import ConfirmModal from '../components/ConfirmModal';
+import { formatRupees } from '../utils/format';
 
 const getToday = () => new Date().toISOString().split('T')[0];
 
@@ -9,13 +10,6 @@ const parseNumber = (value) => {
   const num = Number(value);
   return Number.isFinite(num) ? num : 0;
 };
-
-const formatRupees = (value) =>
-  new Intl.NumberFormat('en-IN', {
-    style: 'currency',
-    currency: 'INR',
-    maximumFractionDigits: 2,
-  }).format(Number(value || 0));
 
 const FuelLogs = () => {
   const { id } = useParams();
@@ -33,7 +27,7 @@ const FuelLogs = () => {
     date: getToday(),
   });
 
-  const fetchLogs = async () => {
+  const fetchLogs = useCallback(async () => {
     try {
       const res = await api.get(`/fuel/${id}`);
       setLogs(res.data || []);
@@ -41,11 +35,11 @@ const FuelLogs = () => {
       console.error(e);
       setError('Could not load fuel history.');
     }
-  };
+  }, [id]);
 
   useEffect(() => {
     fetchLogs();
-  }, [id]);
+  }, [fetchLogs]);
 
   const stats = useMemo(() => {
     const totalBill = logs.reduce((sum, log) => sum + parseNumber(log.fuelCost), 0);

@@ -2,17 +2,10 @@ import React, { useState, useEffect } from 'react';
 import { BarChart, Bar, XAxis, YAxis, Tooltip, CartesianGrid, ResponsiveContainer } from 'recharts';
 import api from '../services/api';
 import { useAuth } from '../context/useAuth';
-import VehicleIssueChatbot from '../components/VehicleIssueChatbot';
+import AddVehicleModal from '../components/AddVehicleModal';
 import Skeleton from '../components/Skeleton';
-
-const VEHICLE_TYPES = ['Car', 'Bike', 'Truck', 'Van', 'Other'];
-
-const formatRupees = (value) =>
-  new Intl.NumberFormat('en-IN', {
-    style: 'currency',
-    currency: 'INR',
-    maximumFractionDigits: 2,
-  }).format(Number(value || 0));
+import { formatRupees } from '../utils/format';
+import { downloadVehicleReport } from '../utils/reports';
 
 const Dashboard = () => {
   const { userId } = useAuth();
@@ -21,14 +14,6 @@ const Dashboard = () => {
   const [dashboardData, setDashboardData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [showVehicleModal, setShowVehicleModal] = useState(false);
-  const [vehicleForm, setVehicleForm] = useState({
-    vehicleName: '',
-    vehicleNumber: '',
-    vehicleType: '',
-    purchaseDate: '',
-  });
-  const [addingVehicle, setAddingVehicle] = useState(false);
-  const [vehicleError, setVehicleError] = useState('');
   const [fleetData, setFleetData] = useState(null);
   const [downloadingPdf, setDownloadingPdf] = useState(false);
   const [sendingDigest, setSendingDigest] = useState(false);
@@ -41,7 +26,7 @@ const Dashboard = () => {
         return;
       }
       try {
-        const res = await api.get(`/vehicles?userId=${userId}`);
+        const res = await api.get('/vehicles');
         setVehicles(res.data);
         if (res.data.length > 0) {
           setSelectedVehicle(res.data[0].id);
@@ -88,16 +73,8 @@ const Dashboard = () => {
     if (!selectedVehicle) return;
     setDownloadingPdf(true);
     try {
-      const res = await api.get(`/reports/vehicle/${selectedVehicle}`, { responseType: 'blob' });
       const vehicle = vehicles.find(v => String(v.id) === String(selectedVehicle));
-      const url = window.URL.createObjectURL(new Blob([res.data], { type: 'application/pdf' }));
-      const link = document.createElement('a');
-      link.href = url;
-      link.download = `${vehicle?.vehicleName || 'vehicle'}-report.pdf`;
-      document.body.appendChild(link);
-      link.click();
-      link.remove();
-      window.URL.revokeObjectURL(url);
+      await downloadVehicleReport(selectedVehicle, vehicle?.vehicleName);
       showToast('success', 'PDF report downloaded.');
     } catch (err) {
       console.error(err);
@@ -127,97 +104,10 @@ const Dashboard = () => {
         .map(([month, cost]) => ({ month, cost }))
     : [];
 
-  const resetVehicleForm = () => {
-    setVehicleForm({ vehicleName: '', vehicleNumber: '', vehicleType: '', purchaseDate: '' });
-    setVehicleError('');
+  const handleVehicleAdded = (vehicle) => {
+    setVehicles(prev => [...prev, vehicle]);
+    setSelectedVehicle(vehicle.id);
   };
-
-  const closeVehicleModal = () => {
-    setShowVehicleModal(false);
-    resetVehicleForm();
-  };
-
-  const handleAddVehicle = async (e) => {
-    e.preventDefault();
-    setAddingVehicle(true);
-    setVehicleError('');
-    try {
-      const res = await api.post('/vehicles', { ...vehicleForm, userId });
-      setVehicles(prev => [...prev, res.data]);
-      setSelectedVehicle(res.data.id);
-      closeVehicleModal();
-    } catch (err) {
-      console.error(err);
-      const message = err.response?.data || err.message || 'Please check the details and try again.';
-      setVehicleError(`Could not add vehicle. ${message}`);
-    } finally {
-      setAddingVehicle(false);
-    }
-  };
-
-  const renderVehicleModal = () => (
-    <div className="modal-overlay" role="presentation" onClick={closeVehicleModal}>
-      <div className="modal-card" role="dialog" aria-modal="true" aria-labelledby="add-vehicle-title" onClick={(e) => e.stopPropagation()}>
-        <div className="modal-head">
-          <h2 id="add-vehicle-title" className="modal-title">Add Vehicle</h2>
-          <button type="button" onClick={closeVehicleModal} className="modal-close" aria-label="Close">×</button>
-        </div>
-        <form onSubmit={handleAddVehicle} style={styles.modalForm}>
-          <div className="field">
-            <label className="field-label">Vehicle Name</label>
-            <input
-              className="input"
-              type="text"
-              value={vehicleForm.vehicleName}
-              onChange={e => setVehicleForm({ ...vehicleForm, vehicleName: e.target.value })}
-              placeholder="Honda City"
-              required
-            />
-          </div>
-          <div className="field">
-            <label className="field-label">Vehicle Number</label>
-            <input
-              className="input"
-              type="text"
-              value={vehicleForm.vehicleNumber}
-              onChange={e => setVehicleForm({ ...vehicleForm, vehicleNumber: e.target.value })}
-              placeholder="MH 12 AB 1234"
-              required
-            />
-          </div>
-          <div className="field">
-            <label className="field-label">Vehicle Type</label>
-            <select
-              className="input"
-              value={vehicleForm.vehicleType}
-              onChange={e => setVehicleForm({ ...vehicleForm, vehicleType: e.target.value })}
-              required
-            >
-              <option value="">Select type</option>
-              {VEHICLE_TYPES.map(t => <option key={t} value={t}>{t}</option>)}
-            </select>
-          </div>
-          <div className="field">
-            <label className="field-label">Purchase Date</label>
-            <input
-              className="input"
-              type="date"
-              value={vehicleForm.purchaseDate}
-              onChange={e => setVehicleForm({ ...vehicleForm, purchaseDate: e.target.value })}
-              required
-            />
-          </div>
-          {vehicleError && <div className="alert alert-error">{vehicleError}</div>}
-          <div style={styles.modalActions}>
-            <button type="button" className="btn btn-ghost" onClick={closeVehicleModal}>Cancel</button>
-            <button type="submit" className="btn btn-primary" disabled={addingVehicle}>
-              {addingVehicle ? 'Adding...' : '+ Add Vehicle'}
-            </button>
-          </div>
-        </form>
-      </div>
-    </div>
-  );
 
   if (loading && vehicles.length === 0) {
     return (
@@ -257,8 +147,9 @@ const Dashboard = () => {
             + Add Your First Vehicle
           </button>
         </div>
-        {showVehicleModal && renderVehicleModal()}
-        <VehicleIssueChatbot />
+        {showVehicleModal && (
+          <AddVehicleModal onClose={() => setShowVehicleModal(false)} onAdded={handleVehicleAdded} />
+        )}
       </div>
     );
   }
@@ -458,8 +349,9 @@ const Dashboard = () => {
         </div>
       )}
 
-      {showVehicleModal && renderVehicleModal()}
-      <VehicleIssueChatbot />
+      {showVehicleModal && (
+        <AddVehicleModal onClose={() => setShowVehicleModal(false)} onAdded={handleVehicleAdded} />
+      )}
     </div>
   );
 };

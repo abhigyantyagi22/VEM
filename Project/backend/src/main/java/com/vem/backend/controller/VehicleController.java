@@ -12,11 +12,6 @@ import java.util.List;
 @RestController
 @RequestMapping("/api/vehicles")
 
-@CrossOrigin(
-        origins = "https://vem-ochre.vercel.app",
-        allowCredentials = "true"
-)
-
 public class VehicleController {
 
     private final VehicleService vehicleService;
@@ -25,9 +20,8 @@ public class VehicleController {
         this.vehicleService = vehicleService;
     }
 
-    // Assuming user id is passed via param until JWT is setup
     @GetMapping
-    public ResponseEntity<List<VehicleDto>> getVehicles(@AuthenticationPrincipal AuthenticatedUserDetails currentUser, @RequestParam(required = false) Long userId) {
+    public ResponseEntity<List<VehicleDto>> getVehicles(@AuthenticationPrincipal AuthenticatedUserDetails currentUser) {
         return ResponseEntity.ok(vehicleService.getUserVehicles(currentUser.getId()));
     }
 

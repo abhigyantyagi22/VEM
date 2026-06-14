@@ -10,10 +10,6 @@ import org.springframework.web.bind.annotation.*;
 
 @RestController
 @RequestMapping("/api/reports")
-@CrossOrigin(
-        origins = "https://vem-ochre.vercel.app",
-        allowCredentials = "true"
-)
 public class ReportController {
 
     private final ReportService reportService;

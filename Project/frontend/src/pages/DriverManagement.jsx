@@ -1,8 +1,9 @@
-import React, { useState, useEffect } from 'react';
+import React, { useCallback, useState, useEffect } from 'react';
 import { useParams } from 'react-router-dom';
 import api from '../services/api';
 import { useAuth } from '../context/useAuth';
 import ConfirmModal from '../components/ConfirmModal';
+import { fetchDrivers } from '../utils/drivers';
 
 const DriverManagement = () => {
   const { id } = useParams();
@@ -22,7 +23,7 @@ const DriverManagement = () => {
     const fetchVehicles = async () => {
       try {
         if (!userId) return;
-        const res = await api.get(`/vehicles?userId=${userId}`);
+        const res = await api.get('/vehicles');
         setVehicles(res.data);
       } catch (e) {
         console.error(e);
@@ -31,45 +32,26 @@ const DriverManagement = () => {
     fetchVehicles();
   }, [userId]);
 
-  const fetchAllDrivers = async () => {
+  const fetchAllDrivers = useCallback(async () => {
     try {
-      try {
-        const res = await api.get('/drivers');
-        const vehicleById = new Map((vehicles || []).map(v => [String(v.id), v]));
-        const list = (res.data || []).map(d => ({
-          ...d,
-          vehicleId: d.vehicleId || '',
-          vehicleName: d.vehicleId ? (vehicleById.get(String(d.vehicleId))?.vehicleName || '') : '',
-          vehicleNumber: d.vehicleId ? (vehicleById.get(String(d.vehicleId))?.vehicleNumber || '') : '',
-        }));
-        setAllDrivers(list);
-        return;
-      } catch {
-        // fall back to per-vehicle fetch
-      }
-
-      const allDriversList = [];
-      for (const vehicle of vehicles) {
-        try {
-          const res = await api.get(`/drivers/${vehicle.id}`);
-          res.data.forEach(driver => {
-            allDriversList.push({ ...driver, vehicleId: vehicle.id, vehicleName: vehicle.vehicleName, vehicleNumber: vehicle.vehicleNumber });
-          });
-        } catch (e) {
-          console.error(e);
-        }
-      }
-      setAllDrivers(allDriversList);
+      const drivers = await fetchDrivers();
+      const vehicleById = new Map((vehicles || []).map(v => [String(v.id), v]));
+      setAllDrivers(drivers.map(d => ({
+        ...d,
+        vehicleId: d.vehicleId || '',
+        vehicleName: d.vehicleId ? (vehicleById.get(String(d.vehicleId))?.vehicleName || '') : '',
+        vehicleNumber: d.vehicleId ? (vehicleById.get(String(d.vehicleId))?.vehicleNumber || '') : '',
+      })));
     } catch (e) {
       console.error(e);
     }
-  };
+  }, [vehicles]);
 
   useEffect(() => {
     if (vehicles.length > 0) {
       fetchAllDrivers();
     }
-  }, [vehicles]);
+  }, [vehicles, fetchAllDrivers]);
 
   const resetForm = () => {
     setForm({ driverName: '', licenseNumber: '', contact: '', vehicleId: '' });

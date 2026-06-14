@@ -1,86 +1,48 @@
-import React, { useState, useEffect } from 'react';
+import React, { useCallback, useState, useEffect } from 'react';
 import api from '../services/api';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/useAuth';
 import ConfirmModal from '../components/ConfirmModal';
+import AddVehicleModal from '../components/AddVehicleModal';
+import { downloadVehicleReport } from '../utils/reports';
+import { fetchDrivers } from '../utils/drivers';
 
 const TYPE_ICONS = { Car: '🚗', Bike: '🏍', Truck: '🚚', Van: '🚐', Other: '🛞' };
-const VEHICLE_TYPES = ['Car', 'Bike', 'Truck', 'Van', 'Other'];
 
 const VehicleList = () => {
   const { userId } = useAuth();
   const [vehicles, setVehicles] = useState([]);
   const [showModal, setShowModal] = useState(false);
-  const [form, setForm] = useState({ vehicleName: '', vehicleNumber: '', vehicleType: '', purchaseDate: '' });
-  const [addingVehicle, setAddingVehicle] = useState(false);
-  const [vehicleError, setVehicleError] = useState('');
   const [confirm, setConfirm] = useState(null);
   const [downloadingId, setDownloadingId] = useState(null);
   const navigate = useNavigate();
 
-  const fetchVehicles = async () => {
+  const fetchVehicles = useCallback(async () => {
     if (!userId) return;
     try {
-      const res = await api.get(`/vehicles?userId=${userId}`);
+      const res = await api.get('/vehicles');
       const vehiclesData = res.data || [];
+      let driverMap = {};
       try {
-        const driversRes = await api.get('/drivers');
-        const drivers = driversRes.data || [];
-        const driverMap = {};
+        const drivers = await fetchDrivers();
         drivers.forEach(d => {
           if (d.vehicleId) driverMap[d.vehicleId] = d;
         });
-        setVehicles(vehiclesData.map(v => ({
-          ...v,
-          assignedDriverName: driverMap[v.id]?.driverName || '',
-        })));
-      } catch {
-        const enriched = await Promise.all(vehiclesData.map(async (v) => {
-          try {
-            const drv = await api.get(`/drivers/${v.id}`);
-            const driver = Array.isArray(drv.data) && drv.data.length > 0 ? drv.data[0] : null;
-            return { ...v, assignedDriverName: driver ? driver.driverName : '' };
-          } catch {
-            return { ...v, assignedDriverName: '' };
-          }
-        }));
-        setVehicles(enriched);
+      } catch (e) {
+        console.error(e);
       }
+      setVehicles(vehiclesData.map(v => ({
+        ...v,
+        assignedDriverName: driverMap[v.id]?.driverName || '',
+      })));
     } catch (e) {
       console.error(e);
     }
-  };
+  }, [userId]);
 
   useEffect(() => {
     fetchVehicles();
-  }, [userId]);
-
-  const resetForm = () => {
-    setForm({ vehicleName: '', vehicleNumber: '', vehicleType: '', purchaseDate: '' });
-    setVehicleError('');
-  };
-
-  const closeModal = () => {
-    setShowModal(false);
-    resetForm();
-  };
-
-  const handleAdd = async (e) => {
-    e.preventDefault();
-    setAddingVehicle(true);
-    setVehicleError('');
-    try {
-      await api.post('/vehicles', { ...form, userId });
-      fetchVehicles();
-      closeModal();
-    } catch (e) {
-      console.error('Error adding vehicle', e);
-      const message = e.response?.data || e.message || 'Please check the details and try again.';
-      setVehicleError(`Could not add vehicle. ${message}`);
-    } finally {
-      setAddingVehicle(false);
-    }
-  };
+  }, [fetchVehicles]);
 
   const handleDelete = (vehicle) => {
     setConfirm({
@@ -100,85 +62,13 @@ const VehicleList = () => {
   const handleDownloadReport = async (vehicle) => {
     setDownloadingId(vehicle.id);
     try {
-      const res = await api.get(`/reports/vehicle/${vehicle.id}`, { responseType: 'blob' });
-      const url = window.URL.createObjectURL(new Blob([res.data], { type: 'application/pdf' }));
-      const link = document.createElement('a');
-      link.href = url;
-      link.download = `${vehicle.vehicleName}-report.pdf`;
-      document.body.appendChild(link);
-      link.click();
-      link.remove();
-      window.URL.revokeObjectURL(url);
+      await downloadVehicleReport(vehicle.id, vehicle.vehicleName);
     } catch (e) {
       console.error(e);
     } finally {
       setDownloadingId(null);
     }
   };
-
-  const renderModal = () => (
-    <div className="modal-overlay" role="presentation" onClick={closeModal}>
-      <div className="modal-card" role="dialog" aria-modal="true" aria-labelledby="add-vehicle-title" onClick={(e) => e.stopPropagation()}>
-        <div className="modal-head">
-          <h2 id="add-vehicle-title" className="modal-title">Add Vehicle</h2>
-          <button type="button" onClick={closeModal} className="modal-close" aria-label="Close">×</button>
-        </div>
-        <form onSubmit={handleAdd} style={styles.modalForm}>
-          <div className="field">
-            <label className="field-label">Vehicle Name</label>
-            <input
-              className="input"
-              type="text"
-              value={form.vehicleName}
-              onChange={e => setForm({ ...form, vehicleName: e.target.value })}
-              placeholder="Honda City"
-              required
-            />
-          </div>
-          <div className="field">
-            <label className="field-label">Vehicle Number</label>
-            <input
-              className="input"
-              type="text"
-              value={form.vehicleNumber}
-              onChange={e => setForm({ ...form, vehicleNumber: e.target.value })}
-              placeholder="MH 12 AB 1234"
-              required
-            />
-          </div>
-          <div className="field">
-            <label className="field-label">Vehicle Type</label>
-            <select
-              className="input"
-              value={form.vehicleType}
-              onChange={e => setForm({ ...form, vehicleType: e.target.value })}
-              required
-            >
-              <option value="">Select type</option>
-              {VEHICLE_TYPES.map(t => <option key={t} value={t}>{t}</option>)}
-            </select>
-          </div>
-          <div className="field">
-            <label className="field-label">Purchase Date</label>
-            <input
-              className="input"
-              type="date"
-              value={form.purchaseDate}
-              onChange={e => setForm({ ...form, purchaseDate: e.target.value })}
-              required
-            />
-          </div>
-          {vehicleError && <div className="alert alert-error">{vehicleError}</div>}
-          <div style={styles.modalActions}>
-            <button type="button" className="btn btn-ghost" onClick={closeModal}>Cancel</button>
-            <button type="submit" className="btn btn-primary" disabled={addingVehicle}>
-              {addingVehicle ? 'Adding...' : '+ Add Vehicle'}
-            </button>
-          </div>
-        </form>
-      </div>
-    </div>
-  );
 
   return (
     <div className="page-shell" style={styles.page}>
@@ -244,7 +134,9 @@ const VehicleList = () => {
         </div>
       )}
 
-      {showModal && renderModal()}
+      {showModal && (
+        <AddVehicleModal onClose={() => setShowModal(false)} onAdded={fetchVehicles} />
+      )}
       {confirm && <ConfirmModal message={confirm.message} onConfirm={confirm.onConfirm} onCancel={() => setConfirm(null)} />}
     </div>
   );
@@ -286,8 +178,6 @@ const styles = {
   meta: { margin: '3px 0 0', color: 'var(--text-2)', fontSize: '13px', fontWeight: 600 },
   chipRow: { display: 'flex', gap: '8px', flexWrap: 'wrap' },
   actions: { display: 'flex', gap: '8px', flexWrap: 'wrap' },
-  modalForm: { display: 'grid', gap: '16px' },
-  modalActions: { display: 'flex', justifyContent: 'flex-end', gap: '10px', marginTop: '4px' },
 };
 
 export default VehicleList;

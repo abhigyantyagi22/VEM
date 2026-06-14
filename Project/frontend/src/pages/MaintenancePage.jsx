@@ -1,14 +1,8 @@
-import React, { useState, useEffect } from 'react';
+import React, { useCallback, useState, useEffect } from 'react';
 import { useParams } from 'react-router-dom';
 import api from '../services/api';
 import ConfirmModal from '../components/ConfirmModal';
-
-const formatRupees = (value) =>
-  new Intl.NumberFormat('en-IN', {
-    style: 'currency',
-    currency: 'INR',
-    maximumFractionDigits: 2,
-  }).format(Number(value || 0));
+import { formatRupees } from '../utils/format';
 
 const MaintenancePage = () => {
   const { id } = useParams();
@@ -18,18 +12,18 @@ const MaintenancePage = () => {
   const [editingLogId, setEditingLogId] = useState(null);
   const today = new Date();
 
-  const fetchLogs = async () => {
+  const fetchLogs = useCallback(async () => {
     try {
       const res = await api.get(`/maintenance?vehicleId=${id}`);
       setLogs(res.data);
     } catch (e) {
       console.error(e);
     }
-  };
+  }, [id]);
 
   useEffect(() => {
     fetchLogs();
-  }, [id]);
+  }, [fetchLogs]);
 
   const handleSubmit = async (e) => {
     e.preventDefault();

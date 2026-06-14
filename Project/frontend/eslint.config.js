@@ -24,6 +24,9 @@ export default defineConfig([
     },
     rules: {
       'no-unused-vars': ['error', { varsIgnorePattern: '^[A-Z_]' }],
+      // Fetch-on-mount effects legitimately setState after an await; this new
+      // rule misfires on that pattern, so keep it advisory rather than an error.
+      'react-hooks/set-state-in-effect': 'warn',
     },
   },
 ])

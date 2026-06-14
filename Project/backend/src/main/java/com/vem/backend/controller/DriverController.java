@@ -12,11 +12,6 @@ import java.util.List;
 @RestController
 @RequestMapping("/api/drivers")
 
-@CrossOrigin(
-        origins = "https://vem-ochre.vercel.app",
-        allowCredentials = "true"
-)
-
 public class DriverController {
 
     private final DriverService driverService;

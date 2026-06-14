@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
 import { useParams } from 'react-router-dom';
 import api from '../services/api';
 import ConfirmModal from '../components/ConfirmModal';
@@ -21,7 +21,7 @@ const DocumentsPage = () => {
   const [error, setError] = useState('');
   const [successMessage, setSuccessMessage] = useState('');
 
-  const fetchDoc = async () => {
+  const fetchDoc = useCallback(async () => {
     try {
       const res = await api.get(`/documents?vehicleId=${id}`);
       if (res.data) {
@@ -36,9 +36,9 @@ const DocumentsPage = () => {
         console.error(e);
       }
     }
-  };
+  }, [id]);
 
-  const fetchHistory = async () => {
+  const fetchHistory = useCallback(async () => {
     try {
       const res = await api.get(`/documents/history?vehicleId=${id}`);
       setHistory(res.data || []);
@@ -46,12 +46,12 @@ const DocumentsPage = () => {
       console.error(e);
       setError('Could not load document history. Please refresh and try again.');
     }
-  };
+  }, [id]);
 
   useEffect(() => {
     fetchDoc();
     fetchHistory();
-  }, [id]);
+  }, [fetchDoc, fetchHistory]);
 
   const handleSubmit = async (e) => {
     e.preventDefault();

@@ -12,11 +12,6 @@ import java.util.List;
 @RestController
 @RequestMapping("/api/documents")
 
-@CrossOrigin(
-        origins = "https://vem-ochre.vercel.app",
-        allowCredentials = "true"
-)
-
 public class DocumentController {
 
     private final DocumentService documentService;

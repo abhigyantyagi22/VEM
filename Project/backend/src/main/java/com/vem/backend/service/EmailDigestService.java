@@ -1,11 +1,9 @@
 package com.vem.backend.service;
 
-import com.vem.backend.model.Document;
 import com.vem.backend.model.FuelLog;
 import com.vem.backend.model.Maintenance;
 import com.vem.backend.model.User;
 import com.vem.backend.model.Vehicle;
-import com.vem.backend.repository.DocumentRepository;
 import com.vem.backend.repository.FuelLogRepository;
 import com.vem.backend.repository.MaintenanceRepository;
 import com.vem.backend.repository.UserRepository;
@@ -30,12 +28,14 @@ public class EmailDigestService {
 
     private static final Logger log = LoggerFactory.getLogger(EmailDigestService.class);
 
+    private static final int DIGEST_ALERT_WINDOW_DAYS = 30;
+
     private final JavaMailSender mailSender;
     private final UserRepository userRepository;
     private final VehicleRepository vehicleRepository;
     private final FuelLogRepository fuelLogRepository;
     private final MaintenanceRepository maintenanceRepository;
-    private final DocumentRepository documentRepository;
+    private final AlertService alertService;
 
     @Value("${app.mail.from:}")
     private String fromAddress;
@@ -48,13 +48,13 @@ public class EmailDigestService {
                               VehicleRepository vehicleRepository,
                               FuelLogRepository fuelLogRepository,
                               MaintenanceRepository maintenanceRepository,
-                              DocumentRepository documentRepository) {
+                              AlertService alertService) {
         this.mailSender = mailSender;
         this.userRepository = userRepository;
         this.vehicleRepository = vehicleRepository;
         this.fuelLogRepository = fuelLogRepository;
         this.maintenanceRepository = maintenanceRepository;
-        this.documentRepository = documentRepository;
+        this.alertService = alertService;
     }
 
     public boolean isMailConfigured() {
@@ -100,8 +100,6 @@ public class EmailDigestService {
         YearMonth lastMonth = YearMonth.from(LocalDate.now().minusMonths(1));
         LocalDate monthStart = lastMonth.atDay(1);
         LocalDate monthEnd = lastMonth.atEndOfMonth();
-        LocalDate today = LocalDate.now();
-        LocalDate horizon = today.plusDays(30);
 
         List<Vehicle> vehicles = vehicleRepository.findByUserId(userId);
         List<FuelLog> fuelLogs = fuelLogRepository.findByVehicleUserIdOrderByDateDesc(userId);
@@ -148,37 +146,17 @@ public class EmailDigestService {
               .append("\n\n");
         }
 
-        sb.append("UPCOMING IN THE NEXT 30 DAYS\n");
-        boolean anyUpcoming = false;
-        for (Maintenance m : maintLogs) {
-            if (m.getNextDue() != null && !m.getNextDue().isBefore(today) && !m.getNextDue().isAfter(horizon)) {
-                String vName = m.getVehicle() != null ? m.getVehicle().getVehicleName() : "Vehicle";
-                sb.append("  Service due ").append(m.getNextDue()).append(" — ")
-                  .append(vName).append(" (").append(m.getServiceType()).append(")\n");
-                anyUpcoming = true;
-            }
-        }
-        for (Vehicle v : vehicles) {
-            Document d = documentRepository.findTopByVehicleIdOrderByIdDesc(v.getId()).orElse(null);
-            if (d == null) continue;
-            anyUpcoming |= appendExpiry(sb, "Insurance", d.getInsuranceExpiry(), v, today, horizon);
-            anyUpcoming |= appendExpiry(sb, "PUC", d.getPucExpiry(), v, today, horizon);
-            anyUpcoming |= appendExpiry(sb, "Registration", d.getRegistrationExpiry(), v, today, horizon);
-        }
-        if (!anyUpcoming) {
+        sb.append("DUE IN THE NEXT ").append(DIGEST_ALERT_WINDOW_DAYS).append(" DAYS\n");
+        List<String> alerts = alertService.getAlertMessages(userId, DIGEST_ALERT_WINDOW_DAYS);
+        if (alerts.isEmpty()) {
             sb.append("  Nothing due — you're all clear!\n");
+        } else {
+            for (String alert : alerts) {
+                sb.append("  ").append(alert).append("\n");
+            }
         }
 
         sb.append("\nDrive safe,\nWheelSync\n");
         return sb.toString();
-    }
-
-    private boolean appendExpiry(StringBuilder sb, String label, LocalDate expiry, Vehicle v, LocalDate today, LocalDate horizon) {
-        if (expiry != null && !expiry.isBefore(today) && !expiry.isAfter(horizon)) {
-            sb.append("  ").append(label).append(" expires ").append(expiry)
-              .append(" — ").append(v.getVehicleName()).append("\n");
-            return true;
-        }
-        return false;
     }
 }
